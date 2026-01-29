@@ -1,44 +1,41 @@
-<%--
-  Created by IntelliJ IDEA.
-  User: yponnou
-  Date: 29/01/2026
-  Time: 15:09
-  To change this template use File | Settings | File Templates.
---%>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ page import="org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.model.Annonce" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html>
 <head><title>Modifier annonce</title></head>
 <body>
 <h1>Modifier une annonce</h1>
 
-<%
-    String error = (String) request.getAttribute("error");
-    if (error != null) out.print("<p style='color:red'>" + error + "</p>");
+<c:if test="${not empty error}">
+    <p style="color:red"><c:out value="${error}"/></p>
+</c:if>
 
-    Annonce a = (Annonce) request.getAttribute("annonce");
-    if (a == null) { out.print("<p>Annonce introuvable.</p>"); return; }
-%>
+<c:choose>
+    <c:when test="${empty annonce}">
+        <p>Annonce introuvable.</p>
+    </c:when>
+    <c:otherwise>
+        <form method="post" action="AnnonceUpdate">
+            <input type="hidden" name="id" value="${annonce.id}"/>
 
-<form method="post" action="AnnonceUpdate">
-    <input type="hidden" name="id" value="<%= a.getId() %>"/>
+            <label>Title:</label><br/>
+            <input type="text" name="title" value="<c:out value='${annonce.title}'/>"/><br/><br/>
 
-    <label>Title:</label><br/>
-    <input type="text" name="title" value="<%= a.getTitle() %>"/><br/><br/>
+            <label>Description:</label><br/>
+            <textarea name="description" rows="4" cols="50"><c:out value="${annonce.description}"/></textarea><br/><br/>
 
-    <label>Description:</label><br/>
-    <textarea name="description" rows="4" cols="50"><%= a.getDescription() %></textarea><br/><br/>
+            <label>Adress:</label><br/>
+            <input type="text" name="adress" value="<c:out value='${annonce.adress}'/>"/><br/><br/>
 
-    <label>Adress:</label><br/>
-    <input type="text" name="adress" value="<%= a.getAdress() %>"/><br/><br/>
+            <label>Mail:</label><br/>
+            <input type="email" name="mail" value="<c:out value='${annonce.mail}'/>"/><br/><br/>
 
-    <label>Mail:</label><br/>
-    <input type="email" name="mail" value="<%= a.getMail() %>"/><br/><br/>
+            <button type="submit">Mettre à jour</button>
+        </form>
 
-    <button type="submit">Mettre à jour</button>
-</form>
+        <p><a href="AnnonceList">Retour liste</a></p>
+    </c:otherwise>
+</c:choose>
 
-<p><a href="AnnonceList">Retour liste</a></p>
 </body>
 </html>

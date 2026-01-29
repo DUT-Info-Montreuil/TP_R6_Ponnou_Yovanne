@@ -1,21 +1,14 @@
-<%--
-  Created by IntelliJ IDEA.
-  User: yponnou
-  Date: 29/01/2026
-  Time: 15:00
-  To change this template use File | Settings | File Templates.
---%>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html>
 <head><title>Ajouter annonce</title></head>
 <body>
 <h1>Ajouter une annonce</h1>
 
-<%
-    String error = (String) request.getAttribute("error");
-    if (error != null) { out.print("<p style='color:red'>" + error + "</p>"); }
-%>
+<c:if test="${not empty error}">
+    <p style="color:red"><c:out value="${error}"/></p>
+</c:if>
 
 <form method="post" action="AnnonceAdd">
     <label>Title:</label><br/>
