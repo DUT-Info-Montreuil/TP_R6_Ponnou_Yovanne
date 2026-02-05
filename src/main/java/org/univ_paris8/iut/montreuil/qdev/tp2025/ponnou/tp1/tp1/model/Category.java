@@ -3,9 +3,15 @@ package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.model;
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
+
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.ArrayList;
 import java.util.List;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "categories")
 public class Category {
@@ -27,30 +33,5 @@ public class Category {
 
     public Category(String label) {
         this.label = label;
-    }
-
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getLabel() {
-        return label;
-    }
-
-    public void setLabel(String label) {
-        this.label = label;
-    }
-
-    public List<Annonce> getAnnonces() {
-        return annonces;
-    }
-
-    public void setAnnonces(List<Annonce> annonces) {
-        this.annonces = annonces;
     }
 }

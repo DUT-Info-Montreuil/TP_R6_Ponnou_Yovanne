@@ -4,10 +4,16 @@ import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
+
+import lombok.Getter;
+import lombok.Setter;
+
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "users")
 public class User {
@@ -49,64 +55,5 @@ public class User {
     @PrePersist
     protected void onCreate() {
         this.createdAt = new Timestamp(System.currentTimeMillis());
-    }
-
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public Timestamp getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Timestamp createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public List<Annonce> getAnnonces() {
-        return annonces;
-    }
-
-    public void setAnnonces(List<Annonce> annonces) {
-        this.annonces = annonces;
-    }
-
-    public void addAnnonce(Annonce annonce) {
-        annonces.add(annonce);
-        annonce.setAuthor(this);
-    }
-
-    public void removeAnnonce(Annonce annonce) {
-        annonces.remove(annonce);
-        annonce.setAuthor(null);
     }
 }

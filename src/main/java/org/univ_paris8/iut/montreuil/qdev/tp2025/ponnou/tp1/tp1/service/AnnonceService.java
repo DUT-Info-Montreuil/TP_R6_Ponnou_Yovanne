@@ -1,5 +1,8 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.service;
 
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.dao.AnnonceDAO;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.dao.CategoryDAO;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.dao.UserDAO;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.model.Annonce;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.model.AnnonceStatus;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.model.Category;
@@ -7,41 +10,38 @@ import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.model.User;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.utils.EntityManagerUtil;
 
 import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public class AnnonceService {
+
+    private static final String JOINS = "LEFT JOIN FETCH e.author LEFT JOIN FETCH e.category";
+    private static final String ORDER_BY = "date DESC";
+    private static final String[] KEYWORD_FIELDS = {"title", "description"};
+
+    private final AnnonceDAO annonceDAO = new AnnonceDAO();
+    private final UserDAO userDAO = new UserDAO();
+    private final CategoryDAO categoryDAO = new CategoryDAO();
 
     public Annonce create(String title, String description, String adress, String mail,
                           Long authorId, Long categoryId) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            em.getTransaction().begin();
+            User author = userDAO.findById(em, authorId)
+                    .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
 
-            User author = em.find(User.class, authorId);
-            if (author == null) {
-                throw new IllegalArgumentException("Utilisateur non trouvé");
-            }
-
-            Category category = em.find(Category.class, categoryId);
-            if (category == null) {
-                throw new IllegalArgumentException("Catégorie non trouvée");
-            }
+            Category category = categoryDAO.findById(em, categoryId)
+                    .orElseThrow(() -> new IllegalArgumentException("Catégorie non trouvée"));
 
             Annonce annonce = new Annonce(title, description, adress, mail);
             annonce.setAuthor(author);
             annonce.setCategory(category);
             annonce.setStatus(AnnonceStatus.DRAFT);
 
-            em.persist(annonce);
-            em.getTransaction().commit();
-            return annonce;
-        } catch (Exception e) {
-            if (em.getTransaction().isActive()) {
-                em.getTransaction().rollback();
-            }
-            throw e;
+            em.getTransaction().begin();
+            return annonceDAO.save(em, annonce);
         } finally {
             em.close();
         }
@@ -51,17 +51,11 @@ public class AnnonceService {
                           Long categoryId) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            em.getTransaction().begin();
+            Annonce annonce = annonceDAO.findOneWithFilters(em, Map.of("id", id), JOINS)
+                    .orElseThrow(() -> new IllegalArgumentException("Annonce non trouvée"));
 
-            Annonce annonce = em.find(Annonce.class, id);
-            if (annonce == null) {
-                throw new IllegalArgumentException("Annonce non trouvée");
-            }
-
-            Category category = em.find(Category.class, categoryId);
-            if (category == null) {
-                throw new IllegalArgumentException("Catégorie non trouvée");
-            }
+            Category category = categoryDAO.findById(em, categoryId)
+                    .orElseThrow(() -> new IllegalArgumentException("Catégorie non trouvée"));
 
             annonce.setTitle(title);
             annonce.setDescription(description);
@@ -69,13 +63,8 @@ public class AnnonceService {
             annonce.setMail(mail);
             annonce.setCategory(category);
 
-            em.getTransaction().commit();
-            return annonce;
-        } catch (Exception e) {
-            if (em.getTransaction().isActive()) {
-                em.getTransaction().rollback();
-            }
-            throw e;
+            em.getTransaction().begin();
+            return annonceDAO.update(em, annonce);
         } finally {
             em.close();
         }
@@ -84,26 +73,16 @@ public class AnnonceService {
     public Annonce publish(Long id) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            em.getTransaction().begin();
-
-            Annonce annonce = em.find(Annonce.class, id);
-            if (annonce == null) {
-                throw new IllegalArgumentException("Annonce non trouvée");
-            }
+            Annonce annonce = annonceDAO.findOneWithFilters(em, Map.of("id", id), JOINS)
+                    .orElseThrow(() -> new IllegalArgumentException("Annonce non trouvée"));
 
             if (annonce.getStatus() == AnnonceStatus.ARCHIVED) {
                 throw new IllegalStateException("Impossible de publier une annonce archivée");
             }
 
             annonce.setStatus(AnnonceStatus.PUBLISHED);
-
-            em.getTransaction().commit();
-            return annonce;
-        } catch (Exception e) {
-            if (em.getTransaction().isActive()) {
-                em.getTransaction().rollback();
-            }
-            throw e;
+            em.getTransaction().begin();
+            return annonceDAO.update(em, annonce);
         } finally {
             em.close();
         }
@@ -112,22 +91,12 @@ public class AnnonceService {
     public Annonce archive(Long id) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            em.getTransaction().begin();
-
-            Annonce annonce = em.find(Annonce.class, id);
-            if (annonce == null) {
-                throw new IllegalArgumentException("Annonce non trouvée");
-            }
+            Annonce annonce = annonceDAO.findOneWithFilters(em, Map.of("id", id), JOINS)
+                    .orElseThrow(() -> new IllegalArgumentException("Annonce non trouvée"));
 
             annonce.setStatus(AnnonceStatus.ARCHIVED);
-
-            em.getTransaction().commit();
-            return annonce;
-        } catch (Exception e) {
-            if (em.getTransaction().isActive()) {
-                em.getTransaction().rollback();
-            }
-            throw e;
+            em.getTransaction().begin();
+            return annonceDAO.update(em, annonce);
         } finally {
             em.close();
         }
@@ -137,18 +106,7 @@ public class AnnonceService {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
             em.getTransaction().begin();
-
-            Annonce annonce = em.find(Annonce.class, id);
-            if (annonce != null) {
-                em.remove(annonce);
-            }
-
-            em.getTransaction().commit();
-        } catch (Exception e) {
-            if (em.getTransaction().isActive()) {
-                em.getTransaction().rollback();
-            }
-            throw e;
+            annonceDAO.deleteById(em, id);
         } finally {
             em.close();
         }
@@ -157,14 +115,7 @@ public class AnnonceService {
     public Optional<Annonce> findById(Long id) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            TypedQuery<Annonce> query = em.createQuery(
-                    "SELECT a FROM Annonce a " +
-                    "LEFT JOIN FETCH a.author " +
-                    "LEFT JOIN FETCH a.category " +
-                    "WHERE a.id = :id", Annonce.class);
-            query.setParameter("id", id);
-            List<Annonce> results = query.getResultList();
-            return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
+            return annonceDAO.findOneWithFilters(em, Map.of("id", id), JOINS);
         } finally {
             em.close();
         }
@@ -173,14 +124,7 @@ public class AnnonceService {
     public List<Annonce> findAllPaginated(int page, int size) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            TypedQuery<Annonce> query = em.createQuery(
-                    "SELECT a FROM Annonce a " +
-                    "LEFT JOIN FETCH a.author " +
-                    "LEFT JOIN FETCH a.category " +
-                    "ORDER BY a.date DESC", Annonce.class);
-            query.setFirstResult(page * size);
-            query.setMaxResults(size);
-            return query.getResultList();
+            return annonceDAO.findWithFilters(em, null, null, null, ORDER_BY, JOINS, page, size);
         } finally {
             em.close();
         }
@@ -189,16 +133,7 @@ public class AnnonceService {
     public List<Annonce> findPublishedPaginated(int page, int size) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            TypedQuery<Annonce> query = em.createQuery(
-                    "SELECT a FROM Annonce a " +
-                    "LEFT JOIN FETCH a.author " +
-                    "LEFT JOIN FETCH a.category " +
-                    "WHERE a.status = :status " +
-                    "ORDER BY a.date DESC", Annonce.class);
-            query.setParameter("status", AnnonceStatus.PUBLISHED);
-            query.setFirstResult(page * size);
-            query.setMaxResults(size);
-            return query.getResultList();
+            return annonceDAO.findWithFilters(em, Map.of("status", AnnonceStatus.PUBLISHED), null, null, ORDER_BY, JOINS, page, size);
         } finally {
             em.close();
         }
@@ -207,16 +142,7 @@ public class AnnonceService {
     public List<Annonce> findByAuthorPaginated(Long authorId, int page, int size) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            TypedQuery<Annonce> query = em.createQuery(
-                    "SELECT a FROM Annonce a " +
-                    "LEFT JOIN FETCH a.author " +
-                    "LEFT JOIN FETCH a.category " +
-                    "WHERE a.author.id = :authorId " +
-                    "ORDER BY a.date DESC", Annonce.class);
-            query.setParameter("authorId", authorId);
-            query.setFirstResult(page * size);
-            query.setMaxResults(size);
-            return query.getResultList();
+            return annonceDAO.findWithFilters(em, Map.of("author.id", authorId), null, null, ORDER_BY, JOINS, page, size);
         } finally {
             em.close();
         }
@@ -225,39 +151,19 @@ public class AnnonceService {
     public List<Annonce> searchByKeywordPaginated(String keyword, int page, int size) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            TypedQuery<Annonce> query = em.createQuery(
-                    "SELECT a FROM Annonce a " +
-                    "LEFT JOIN FETCH a.author " +
-                    "LEFT JOIN FETCH a.category " +
-                    "WHERE a.status = :status " +
-                    "AND (LOWER(a.title) LIKE LOWER(:keyword) " +
-                    "OR LOWER(a.description) LIKE LOWER(:keyword)) " +
-                    "ORDER BY a.date DESC", Annonce.class);
-            query.setParameter("status", AnnonceStatus.PUBLISHED);
-            query.setParameter("keyword", "%" + keyword + "%");
-            query.setFirstResult(page * size);
-            query.setMaxResults(size);
-            return query.getResultList();
+            return annonceDAO.findWithFilters(em, Map.of("status", AnnonceStatus.PUBLISHED), keyword, KEYWORD_FIELDS, ORDER_BY, JOINS, page, size);
         } finally {
             em.close();
         }
     }
 
-    public List<Annonce> findByCategoryAndStatusPaginated(Long categoryId, AnnonceStatus status,
-                                                           int page, int size) {
+    public List<Annonce> findByCategoryAndStatusPaginated(Long categoryId, AnnonceStatus status, int page, int size) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            TypedQuery<Annonce> query = em.createQuery(
-                    "SELECT a FROM Annonce a " +
-                    "LEFT JOIN FETCH a.author " +
-                    "LEFT JOIN FETCH a.category " +
-                    "WHERE a.category.id = :categoryId AND a.status = :status " +
-                    "ORDER BY a.date DESC", Annonce.class);
-            query.setParameter("categoryId", categoryId);
-            query.setParameter("status", status);
-            query.setFirstResult(page * size);
-            query.setMaxResults(size);
-            return query.getResultList();
+            Map<String, Object> filters = new HashMap<>();
+            filters.put("category.id", categoryId);
+            filters.put("status", status);
+            return annonceDAO.findWithFilters(em, filters, null, null, ORDER_BY, JOINS, page, size);
         } finally {
             em.close();
         }
@@ -270,9 +176,7 @@ public class AnnonceService {
     public long count() {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            TypedQuery<Long> query = em.createQuery(
-                    "SELECT COUNT(a) FROM Annonce a", Long.class);
-            return query.getSingleResult();
+            return annonceDAO.count(em);
         } finally {
             em.close();
         }
@@ -281,27 +185,16 @@ public class AnnonceService {
     public long countPublished() {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            TypedQuery<Long> query = em.createQuery(
-                    "SELECT COUNT(a) FROM Annonce a WHERE a.status = :status", Long.class);
-            query.setParameter("status", AnnonceStatus.PUBLISHED);
-            return query.getSingleResult();
+            return annonceDAO.countWithFilters(em, Map.of("status", AnnonceStatus.PUBLISHED));
         } finally {
             em.close();
         }
     }
 
-
     public long countByKeyword(String keyword) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            TypedQuery<Long> query = em.createQuery(
-                    "SELECT COUNT(a) FROM Annonce a " +
-                    "WHERE a.status = :status " +
-                    "AND (LOWER(a.title) LIKE LOWER(:keyword) " +
-                    "OR LOWER(a.description) LIKE LOWER(:keyword))", Long.class);
-            query.setParameter("status", AnnonceStatus.PUBLISHED);
-            query.setParameter("keyword", "%" + keyword + "%");
-            return query.getSingleResult();
+            return annonceDAO.countWithFilters(em, Map.of("status", AnnonceStatus.PUBLISHED), keyword, KEYWORD_FIELDS);
         } finally {
             em.close();
         }
@@ -310,10 +203,7 @@ public class AnnonceService {
     public long countByAuthor(Long authorId) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            TypedQuery<Long> query = em.createQuery(
-                    "SELECT COUNT(a) FROM Annonce a WHERE a.author.id = :authorId", Long.class);
-            query.setParameter("authorId", authorId);
-            return query.getSingleResult();
+            return annonceDAO.countWithFilters(em, Map.of("author.id", authorId));
         } finally {
             em.close();
         }
@@ -322,12 +212,10 @@ public class AnnonceService {
     public long countByCategory(Long categoryId) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            TypedQuery<Long> query = em.createQuery(
-                    "SELECT COUNT(a) FROM Annonce a " +
-                    "WHERE a.category.id = :categoryId AND a.status = :status", Long.class);
-            query.setParameter("categoryId", categoryId);
-            query.setParameter("status", AnnonceStatus.PUBLISHED);
-            return query.getSingleResult();
+            Map<String, Object> filters = new HashMap<>();
+            filters.put("category.id", categoryId);
+            filters.put("status", AnnonceStatus.PUBLISHED);
+            return annonceDAO.countWithFilters(em, filters);
         } finally {
             em.close();
         }
