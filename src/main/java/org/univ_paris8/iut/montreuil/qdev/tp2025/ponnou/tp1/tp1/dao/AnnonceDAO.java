@@ -14,14 +14,14 @@ public class AnnonceDAO extends DAO<Annonce> {
     }
 
     @Override
-    public Annonce find(int id) throws Exception {
+    public Annonce find(Long id) throws Exception {
         String sql = "SELECT id, title, description, adress, mail, date FROM annonce WHERE id = ?";
         try (PreparedStatement ps = conn().prepareStatement(sql)) {
-            ps.setInt(1, id);
+            ps.setLong(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) return null;
                 Annonce a = new Annonce();
-                a.setId(rs.getInt("id"));
+                a.setId(rs.getLong("id"));
                 a.setTitle(rs.getString("title"));
                 a.setDescription(rs.getString("description"));
                 a.setAdress(rs.getString("adress"));
@@ -40,7 +40,7 @@ public class AnnonceDAO extends DAO<Annonce> {
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 Annonce a = new Annonce();
-                a.setId(rs.getInt("id"));
+                a.setId(rs.getLong("id"));
                 a.setTitle(rs.getString("title"));
                 a.setDescription(rs.getString("description"));
                 a.setAdress(rs.getString("adress"));
@@ -72,16 +72,16 @@ public class AnnonceDAO extends DAO<Annonce> {
             ps.setString(2, obj.getDescription());
             ps.setString(3, obj.getAdress());
             ps.setString(4, obj.getMail());
-            ps.setInt(5, obj.getId());
+            ps.setLong(5, obj.getId());
             return ps.executeUpdate() == 1;
         }
     }
 
     @Override
-    public boolean delete(int id) throws Exception {
+    public boolean delete(Long id) throws Exception {
         String sql = "DELETE FROM annonce WHERE id = ?";
         try (PreparedStatement ps = conn().prepareStatement(sql)) {
-            ps.setInt(1, id);
+            ps.setLong(1, id);
             return ps.executeUpdate() == 1;
         }
     }

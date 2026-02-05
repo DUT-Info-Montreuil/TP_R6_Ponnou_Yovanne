@@ -9,17 +9,10 @@ public class ConnectionDB {
 
     private static Connection connect;
 
-    private static final String DB_PATH = System.getProperty("user.home") + "/prive/MasterAnnonce.sqlite";
-    private static final String URL = "jdbc:sqlite:" + DB_PATH;
+    private static final String URL = "jdbc:postgresql://postgres:5432/masterannonce";
 
     public static Connection getInstance() throws SQLException {
         if (connect == null || connect.isClosed()) {
-            try {
-                Class.forName("org.sqlite.JDBC");
-            } catch (ClassNotFoundException e) {
-                throw new SQLException("sqlite-jdbc manquant dans WEB-INF/lib", e);
-            }
-
             connect = DriverManager.getConnection(URL);
             initSchema(connect);
         }

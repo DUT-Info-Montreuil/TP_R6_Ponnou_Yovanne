@@ -17,7 +17,7 @@ public class AnnonceUpdate extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         try {
-            int id = Integer.parseInt(request.getParameter("id"));
+            Long id = Long.parseLong(request.getParameter("id"));
             Annonce a = dao.find(id);
 
             if (a == null) {
@@ -40,7 +40,7 @@ public class AnnonceUpdate extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
 
         try {
-            int id = Integer.parseInt(request.getParameter("id"));
+            Long id = Long.parseLong(request.getParameter("id"));
 
             String title = trim(request.getParameter("title"));
             String description = trim(request.getParameter("description"));

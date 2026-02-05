@@ -1,6 +1,3 @@
-DROP DATABASE IF EXISTS masterannonce;
-CREATE DATABASE masterannonce;
-
 DROP TABLE IF EXISTS annonces;
 DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS users;
@@ -68,23 +65,3 @@ INSERT INTO annonces (title, description, adress, mail, status, author_id, categ
     ('Don canapé', 'Canapé 2 places à venir chercher rapidement', 'Paris 75011', 'jean.dupont@mail.com', 'DRAFT', 2, 6),
     ('Recherche développeur', 'CDI développeur Java senior, télétravail possible', 'Paris 75009', 'admin@masterannonce.fr', 'PUBLISHED', 1, 3),
     ('Console PS5', 'PS5 avec 2 manettes et 3 jeux', 'Vincennes 94300', 'marie.martin@mail.com', 'ARCHIVED', 3, 5);
-
--- Vérification
-SELECT 'Users:' AS info, COUNT(*) AS count FROM users
-UNION ALL
-SELECT 'Categories:', COUNT(*) FROM categories
-UNION ALL
-SELECT 'Annonces:', COUNT(*) FROM annonces;
-
--- Affichage des annonces avec jointures
-SELECT
-    a.id,
-    a.title,
-    a.status,
-    u.username AS author,
-    c.label AS category,
-    a.date
-FROM annonces a
-JOIN users u ON a.author_id = u.id
-JOIN categories c ON a.category_id = c.id
-ORDER BY a.date DESC;

@@ -16,7 +16,7 @@ public class AnnonceDelete extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         try {
-            int id = Integer.parseInt(request.getParameter("id"));
+            Long id = Long.parseLong(request.getParameter("id"));
             dao.delete(id);
             response.sendRedirect(request.getContextPath() + "/AnnonceList");
         } catch (Exception e) {
