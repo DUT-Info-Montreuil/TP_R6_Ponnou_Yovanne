@@ -1,35 +1,42 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.controller;
 
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.dao.AnnonceDAO;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.model.Annonce;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.model.Category;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.service.AnnonceService;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.service.CategoryService;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
 
 @WebServlet("/AnnonceUpdate")
 public class AnnonceUpdate extends HttpServlet {
 
-    private final AnnonceDAO dao = new AnnonceDAO();
+    private final AnnonceService annonceService = new AnnonceService();
+    private final CategoryService categoryService = new CategoryService();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         try {
             Long id = Long.parseLong(request.getParameter("id"));
-            Annonce a = dao.find(id);
+            Optional<Annonce> annonceOpt = annonceService.findById(id);
 
-            if (a == null) {
+            if (annonceOpt.isEmpty()) {
                 response.sendRedirect(request.getContextPath() + "/AnnonceList");
                 return;
             }
 
-            request.setAttribute("annonce", a);
+            List<Category> categories = categoryService.findAll();
+            request.setAttribute("annonce", annonceOpt.get());
+            request.setAttribute("categories", categories);
             request.getRequestDispatcher("/AnnonceUpdate.jsp").forward(request, response);
 
-        } catch (Exception e) {
-            throw new ServletException(e);
+        } catch (NumberFormatException e) {
+            response.sendRedirect(request.getContextPath() + "/AnnonceList");
         }
     }
 
@@ -46,27 +53,27 @@ public class AnnonceUpdate extends HttpServlet {
             String description = trim(request.getParameter("description"));
             String adress = trim(request.getParameter("adress"));
             String mail = trim(request.getParameter("mail"));
+            String categoryIdParam = request.getParameter("categoryId");
 
-            if (title.isEmpty() || description.isEmpty() || adress.isEmpty() || mail.isEmpty()) {
+            if (title.isEmpty() || description.isEmpty() || adress.isEmpty() || mail.isEmpty() || categoryIdParam == null || categoryIdParam.isEmpty()) {
                 request.setAttribute("error", "Tous les champs sont obligatoires.");
-                request.setAttribute("annonce", dao.find(id));
+                annonceService.findById(id).ifPresent(a -> request.setAttribute("annonce", a));
+                request.setAttribute("categories", categoryService.findAll());
                 request.getRequestDispatcher("/AnnonceUpdate.jsp").forward(request, response);
                 return;
             }
 
-            Annonce a = new Annonce();
-            a.setId(id);
-            a.setTitle(title);
-            a.setDescription(description);
-            a.setAdress(adress);
-            a.setMail(mail);
-
-            dao.update(a);
+            Long categoryId = Long.parseLong(categoryIdParam);
+            annonceService.update(id, title, description, adress, mail, categoryId);
 
             response.sendRedirect(request.getContextPath() + "/AnnonceList");
 
-        } catch (Exception e) {
-            throw new ServletException(e);
+        } catch (NumberFormatException e) {
+            response.sendRedirect(request.getContextPath() + "/AnnonceList");
+        } catch (IllegalArgumentException e) {
+            request.setAttribute("error", e.getMessage());
+            request.setAttribute("categories", categoryService.findAll());
+            request.getRequestDispatcher("/AnnonceUpdate.jsp").forward(request, response);
         }
     }
 
