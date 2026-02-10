@@ -7,8 +7,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 public class GenericDAO<T, ID> {
+
+    private static final Pattern VALID_FIELD_NAME = Pattern.compile("^[a-zA-Z_][a-zA-Z0-9_.]*$");
+    private static final Set<String> VALID_ORDER_DIRECTIONS = Set.of("ASC", "DESC");
 
     private final Class<T> entityClass;
 
@@ -20,14 +25,11 @@ public class GenericDAO<T, ID> {
 
     public T save(EntityManager em, T entity) {
         em.persist(entity);
-        em.getTransaction().commit();
         return entity;
     }
 
     public T update(EntityManager em, T entity) {
-        T merged = em.merge(entity);
-        em.getTransaction().commit();
-        return merged;
+        return em.merge(entity);
     }
 
     public Optional<T> findById(EntityManager em, ID id) {
@@ -40,7 +42,6 @@ public class GenericDAO<T, ID> {
             entity = em.merge(entity);
         }
         em.remove(entity);
-        em.getTransaction().commit();
     }
 
     public void deleteById(EntityManager em, ID id) {
@@ -48,7 +49,6 @@ public class GenericDAO<T, ID> {
         if (entity != null) {
             em.remove(entity);
         }
-        em.getTransaction().commit();
     }
 
     // ==================== FILTRAGE GENERIQUE ====================
@@ -67,36 +67,14 @@ public class GenericDAO<T, ID> {
                 .append(" e ");
 
         if (joins != null && !joins.isEmpty()) {
-            jpql.append(joins.replace("e.", "e.")).append(" ");
+            jpql.append(joins).append(" ");
         }
 
         Map<String, Object> params = new HashMap<>();
-        List<String> conditions = new ArrayList<>();
-
-        if (filters != null && !filters.isEmpty()) {
-            for (Map.Entry<String, Object> entry : filters.entrySet()) {
-                String field = entry.getKey();
-                String paramName = field.replace(".", "_");
-                conditions.add("e." + field + " = :" + paramName);
-                params.put(paramName, entry.getValue());
-            }
-        }
-
-        if (keyword != null && !keyword.isEmpty() && keywordFields != null && keywordFields.length > 0) {
-            List<String> keywordConditions = new ArrayList<>();
-            for (String field : keywordFields) {
-                keywordConditions.add("LOWER(e." + field + ") LIKE LOWER(:keyword)");
-            }
-            conditions.add("(" + String.join(" OR ", keywordConditions) + ")");
-            params.put("keyword", "%" + keyword + "%");
-        }
-
-        if (!conditions.isEmpty()) {
-            jpql.append("WHERE ").append(String.join(" AND ", conditions)).append(" ");
-        }
+        buildWhereClause(jpql, params, filters, keyword, keywordFields);
 
         if (orderBy != null && !orderBy.isEmpty()) {
-            jpql.append("ORDER BY e.").append(orderBy);
+            appendOrderBy(jpql, orderBy);
         }
 
         TypedQuery<T> query = em.createQuery(jpql.toString(), entityClass);
@@ -131,29 +109,7 @@ public class GenericDAO<T, ID> {
                 .append(" e ");
 
         Map<String, Object> params = new HashMap<>();
-        List<String> conditions = new ArrayList<>();
-
-        if (filters != null && !filters.isEmpty()) {
-            for (Map.Entry<String, Object> entry : filters.entrySet()) {
-                String field = entry.getKey();
-                String paramName = field.replace(".", "_");
-                conditions.add("e." + field + " = :" + paramName);
-                params.put(paramName, entry.getValue());
-            }
-        }
-
-        if (keyword != null && !keyword.isEmpty() && keywordFields != null && keywordFields.length > 0) {
-            List<String> keywordConditions = new ArrayList<>();
-            for (String field : keywordFields) {
-                keywordConditions.add("LOWER(e." + field + ") LIKE LOWER(:keyword)");
-            }
-            conditions.add("(" + String.join(" OR ", keywordConditions) + ")");
-            params.put("keyword", "%" + keyword + "%");
-        }
-
-        if (!conditions.isEmpty()) {
-            jpql.append("WHERE ").append(String.join(" AND ", conditions));
-        }
+        buildWhereClause(jpql, params, filters, keyword, keywordFields);
 
         TypedQuery<Long> query = em.createQuery(jpql.toString(), Long.class);
         params.forEach(query::setParameter);
@@ -178,5 +134,62 @@ public class GenericDAO<T, ID> {
 
     public Optional<T> findOneWithFilters(EntityManager em, Map<String, Object> filters) {
         return findOneWithFilters(em, filters, null);
+    }
+
+    // ==================== METHODES PRIVEES ====================
+
+    private void buildWhereClause(StringBuilder jpql,
+                                  Map<String, Object> params,
+                                  Map<String, Object> filters,
+                                  String keyword,
+                                  String[] keywordFields) {
+
+        List<String> conditions = new ArrayList<>();
+
+        if (filters != null && !filters.isEmpty()) {
+            for (Map.Entry<String, Object> entry : filters.entrySet()) {
+                String field = entry.getKey();
+                validateFieldName(field);
+                String paramName = field.replace(".", "_");
+                conditions.add("e." + field + " = :" + paramName);
+                params.put(paramName, entry.getValue());
+            }
+        }
+
+        if (keyword != null && !keyword.isEmpty() && keywordFields != null && keywordFields.length > 0) {
+            List<String> keywordConditions = new ArrayList<>();
+            for (String field : keywordFields) {
+                validateFieldName(field);
+                keywordConditions.add("LOWER(e." + field + ") LIKE LOWER(:keyword)");
+            }
+            conditions.add("(" + String.join(" OR ", keywordConditions) + ")");
+            params.put("keyword", "%" + keyword + "%");
+        }
+
+        if (!conditions.isEmpty()) {
+            jpql.append("WHERE ").append(String.join(" AND ", conditions)).append(" ");
+        }
+    }
+
+    private void appendOrderBy(StringBuilder jpql, String orderBy) {
+        String[] parts = orderBy.trim().split("\\s+");
+        String field = parts[0];
+        validateFieldName(field);
+
+        jpql.append("ORDER BY e.").append(field);
+
+        if (parts.length > 1) {
+            String direction = parts[1].toUpperCase();
+            if (!VALID_ORDER_DIRECTIONS.contains(direction)) {
+                throw new IllegalArgumentException("Direction de tri invalide : " + direction);
+            }
+            jpql.append(" ").append(direction);
+        }
+    }
+
+    private void validateFieldName(String field) {
+        if (field == null || !VALID_FIELD_NAME.matcher(field).matches()) {
+            throw new IllegalArgumentException("Nom de champ invalide : " + field);
+        }
     }
 }

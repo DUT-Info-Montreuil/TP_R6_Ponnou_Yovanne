@@ -5,6 +5,7 @@ import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.model.User;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.utils.EntityManagerUtil;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityTransaction;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -15,7 +16,10 @@ public class UserService {
 
     public User create(String username, String email, String password) {
         EntityManager em = EntityManagerUtil.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
         try {
+            tx.begin();
+
             if (userDAO.countWithFilters(em, Map.of("username", username)) > 0) {
                 throw new IllegalArgumentException("Ce nom d'utilisateur existe déjà");
             }
@@ -25,8 +29,12 @@ public class UserService {
             }
 
             User user = new User(username, email, password);
-            em.getTransaction().begin();
-            return userDAO.save(em, user);
+            User saved = userDAO.save(em, user);
+            tx.commit();
+            return saved;
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            throw e;
         } finally {
             em.close();
         }
@@ -34,7 +42,10 @@ public class UserService {
 
     public User update(Long id, String username, String email) {
         EntityManager em = EntityManagerUtil.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
         try {
+            tx.begin();
+
             User user = userDAO.findById(em, id)
                     .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
 
@@ -49,8 +60,12 @@ public class UserService {
             user.setUsername(username);
             user.setEmail(email);
 
-            em.getTransaction().begin();
-            return userDAO.update(em, user);
+            User updated = userDAO.update(em, user);
+            tx.commit();
+            return updated;
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            throw e;
         } finally {
             em.close();
         }
@@ -58,13 +73,19 @@ public class UserService {
 
     public void changePassword(Long id, String newPassword) {
         EntityManager em = EntityManagerUtil.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
         try {
+            tx.begin();
+
             User user = userDAO.findById(em, id)
                     .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
 
             user.setPassword(newPassword);
-            em.getTransaction().begin();
             userDAO.update(em, user);
+            tx.commit();
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            throw e;
         } finally {
             em.close();
         }
@@ -108,9 +129,14 @@ public class UserService {
 
     public void delete(Long id) {
         EntityManager em = EntityManagerUtil.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
         try {
-            em.getTransaction().begin();
+            tx.begin();
             userDAO.deleteById(em, id);
+            tx.commit();
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            throw e;
         } finally {
             em.close();
         }

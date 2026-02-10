@@ -10,6 +10,7 @@ import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.model.User;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.utils.EntityManagerUtil;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityTransaction;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +29,10 @@ public class AnnonceService {
     public Annonce create(String title, String description, String adress, String mail,
                           Long authorId, Long categoryId) {
         EntityManager em = EntityManagerUtil.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
         try {
+            tx.begin();
+
             User author = userDAO.findById(em, authorId)
                     .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
 
@@ -40,8 +44,12 @@ public class AnnonceService {
             annonce.setCategory(category);
             annonce.setStatus(AnnonceStatus.DRAFT);
 
-            em.getTransaction().begin();
-            return annonceDAO.save(em, annonce);
+            Annonce saved = annonceDAO.save(em, annonce);
+            tx.commit();
+            return saved;
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            throw e;
         } finally {
             em.close();
         }
@@ -50,7 +58,10 @@ public class AnnonceService {
     public Annonce update(Long id, String title, String description, String adress, String mail,
                           Long categoryId) {
         EntityManager em = EntityManagerUtil.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
         try {
+            tx.begin();
+
             Annonce annonce = annonceDAO.findOneWithFilters(em, Map.of("id", id), JOINS)
                     .orElseThrow(() -> new IllegalArgumentException("Annonce non trouvée"));
 
@@ -63,8 +74,12 @@ public class AnnonceService {
             annonce.setMail(mail);
             annonce.setCategory(category);
 
-            em.getTransaction().begin();
-            return annonceDAO.update(em, annonce);
+            Annonce updated = annonceDAO.update(em, annonce);
+            tx.commit();
+            return updated;
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            throw e;
         } finally {
             em.close();
         }
@@ -72,7 +87,10 @@ public class AnnonceService {
 
     public Annonce publish(Long id) {
         EntityManager em = EntityManagerUtil.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
         try {
+            tx.begin();
+
             Annonce annonce = annonceDAO.findOneWithFilters(em, Map.of("id", id), JOINS)
                     .orElseThrow(() -> new IllegalArgumentException("Annonce non trouvée"));
 
@@ -81,8 +99,12 @@ public class AnnonceService {
             }
 
             annonce.setStatus(AnnonceStatus.PUBLISHED);
-            em.getTransaction().begin();
-            return annonceDAO.update(em, annonce);
+            Annonce updated = annonceDAO.update(em, annonce);
+            tx.commit();
+            return updated;
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            throw e;
         } finally {
             em.close();
         }
@@ -90,13 +112,20 @@ public class AnnonceService {
 
     public Annonce archive(Long id) {
         EntityManager em = EntityManagerUtil.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
         try {
+            tx.begin();
+
             Annonce annonce = annonceDAO.findOneWithFilters(em, Map.of("id", id), JOINS)
                     .orElseThrow(() -> new IllegalArgumentException("Annonce non trouvée"));
 
             annonce.setStatus(AnnonceStatus.ARCHIVED);
-            em.getTransaction().begin();
-            return annonceDAO.update(em, annonce);
+            Annonce updated = annonceDAO.update(em, annonce);
+            tx.commit();
+            return updated;
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            throw e;
         } finally {
             em.close();
         }
@@ -104,9 +133,14 @@ public class AnnonceService {
 
     public void delete(Long id) {
         EntityManager em = EntityManagerUtil.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
         try {
-            em.getTransaction().begin();
+            tx.begin();
             annonceDAO.deleteById(em, id);
+            tx.commit();
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            throw e;
         } finally {
             em.close();
         }

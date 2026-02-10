@@ -6,6 +6,7 @@ import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.model.Category;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.utils.EntityManagerUtil;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityTransaction;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -17,14 +18,21 @@ public class CategoryService {
 
     public Category create(String label) {
         EntityManager em = EntityManagerUtil.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
         try {
+            tx.begin();
+
             if (categoryDAO.countWithFilters(em, Map.of("label", label)) > 0) {
                 throw new IllegalArgumentException("Cette catégorie existe déjà");
             }
 
             Category category = new Category(label);
-            em.getTransaction().begin();
-            return categoryDAO.save(em, category);
+            Category saved = categoryDAO.save(em, category);
+            tx.commit();
+            return saved;
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            throw e;
         } finally {
             em.close();
         }
@@ -32,7 +40,10 @@ public class CategoryService {
 
     public Category update(Long id, String label) {
         EntityManager em = EntityManagerUtil.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
         try {
+            tx.begin();
+
             Category category = categoryDAO.findById(em, id)
                     .orElseThrow(() -> new IllegalArgumentException("Catégorie non trouvée"));
 
@@ -41,8 +52,12 @@ public class CategoryService {
             }
 
             category.setLabel(label);
-            em.getTransaction().begin();
-            return categoryDAO.update(em, category);
+            Category updated = categoryDAO.update(em, category);
+            tx.commit();
+            return updated;
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            throw e;
         } finally {
             em.close();
         }
@@ -77,12 +92,17 @@ public class CategoryService {
 
     public void delete(Long id) {
         EntityManager em = EntityManagerUtil.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
         try {
             if (annonceDAO.countWithFilters(em, Map.of("category.id", id)) > 0) {
                 throw new IllegalStateException("Impossible de supprimer une catégorie contenant des annonces");
             }
-            em.getTransaction().begin();
+            tx.begin();
             categoryDAO.deleteById(em, id);
+            tx.commit();
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            throw e;
         } finally {
             em.close();
         }
