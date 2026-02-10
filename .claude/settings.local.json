@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(mvn compile:*)",
-      "Bash(docker exec:*)"
+      "Bash(docker exec:*)",
+      "Bash(findstr:*)"
     ]
   }
 }

@@ -72,6 +72,28 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- Mockito pour les tests unitaires -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.11.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>5.11.0</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- H2 base en mémoire pour les tests d'intégration -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>2.2.224</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>jstl</groupId>
             <artifactId>jstl</artifactId>
@@ -107,6 +129,12 @@
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+            </plugin>
+            <!-- Plugin Surefire pour JUnit 5 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
             </plugin>
             <!-- Plugin Tomcat 9 pour lancer l'application -->
             <plugin>
