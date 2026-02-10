@@ -8,13 +8,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class GenericDAO<T, ID> {
 
     private static final Pattern VALID_FIELD_NAME = Pattern.compile("^[a-zA-Z_][a-zA-Z0-9_.]*$");
     private static final Pattern VALID_JOIN_CLAUSE = Pattern.compile(
-            "^(LEFT\\s+)?JOIN\\s+FETCH\\s+e\\.[a-zA-Z_][a-zA-Z0-9_.]*$"
+            "(LEFT\\s+)?JOIN\\s+FETCH\\s+e\\.[a-zA-Z_][a-zA-Z0-9_.]*"
     );
     private static final Set<String> VALID_ORDER_DIRECTIONS = Set.of("ASC", "DESC");
 
@@ -204,11 +205,19 @@ public class GenericDAO<T, ID> {
     }
 
     private void validateJoinClause(String joins) {
-        String[] parts = joins.trim().split("\\s+(?=(?:LEFT\\s+)?JOIN\\s+)");
-        for (String part : parts) {
-            if (!VALID_JOIN_CLAUSE.matcher(part.trim()).matches()) {
-                throw new IllegalArgumentException("Clause JOIN invalide : " + part.trim());
+        Matcher matcher = VALID_JOIN_CLAUSE.matcher(joins.trim());
+        int lastEnd = 0;
+        boolean found = false;
+        while (matcher.find()) {
+            found = true;
+            String between = joins.trim().substring(lastEnd, matcher.start()).trim();
+            if (!between.isEmpty()) {
+                throw new IllegalArgumentException("Clause JOIN invalide : " + joins);
             }
+            lastEnd = matcher.end();
+        }
+        if (!found || lastEnd != joins.trim().length()) {
+            throw new IllegalArgumentException("Clause JOIN invalide : " + joins);
         }
     }
 }

@@ -92,6 +92,7 @@ class UserDAOTest {
         User user = new User("charlie", "charlie@test.com", "password123");
         em.getTransaction().begin();
         userDAO.save(em, user);
+        em.getTransaction().commit();
 
         user.setUsername("charlie_updated");
         user.setEmail("charlie_new@test.com");
@@ -109,6 +110,7 @@ class UserDAOTest {
         em.getTransaction().begin();
         userDAO.save(em, user);
         Long id = user.getId();
+        em.getTransaction().commit();
 
         em.getTransaction().begin();
         userDAO.deleteById(em, id);
@@ -124,6 +126,7 @@ class UserDAOTest {
         em.getTransaction().begin();
         userDAO.save(em, user);
         Long id = user.getId();
+        em.getTransaction().commit();
 
         em.getTransaction().begin();
         userDAO.delete(em, user);
@@ -159,10 +162,9 @@ class UserDAOTest {
     void countWithFilters_shouldReturnCorrectCount() {
         em.getTransaction().begin();
         userDAO.save(em, new User("user1", "user1@test.com", "password123"));
-        em.getTransaction().begin();
         userDAO.save(em, new User("user2", "user2@test.com", "password123"));
-        em.getTransaction().begin();
         userDAO.save(em, new User("user3", "user3@test.com", "password123"));
+        em.getTransaction().commit();
 
         long total = userDAO.count(em);
         assertEquals(3, total);
@@ -176,10 +178,9 @@ class UserDAOTest {
     void findWithFilters_shouldReturnOrdered() {
         em.getTransaction().begin();
         userDAO.save(em, new User("zara", "zara@test.com", "password123"));
-        em.getTransaction().begin();
         userDAO.save(em, new User("adam", "adam@test.com", "password123"));
-        em.getTransaction().begin();
         userDAO.save(em, new User("mia", "mia@test.com", "password123"));
+        em.getTransaction().commit();
 
         List<User> users = userDAO.findWithFilters(em, null, null, null, "username ASC", null);
 

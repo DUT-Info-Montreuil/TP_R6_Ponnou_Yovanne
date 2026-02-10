@@ -108,6 +108,7 @@ class AnnonceDAOTest {
         Annonce annonce = createAnnonce("Ancien titre", "Description", AnnonceStatus.DRAFT);
         em.getTransaction().begin();
         annonceDAO.save(em, annonce);
+        em.getTransaction().commit();
 
         annonce.setTitle("Nouveau titre");
         annonce.setStatus(AnnonceStatus.PUBLISHED);
@@ -125,6 +126,7 @@ class AnnonceDAOTest {
         em.getTransaction().begin();
         annonceDAO.save(em, annonce);
         Long id = annonce.getId();
+        em.getTransaction().commit();
 
         em.getTransaction().begin();
         annonceDAO.deleteById(em, id);

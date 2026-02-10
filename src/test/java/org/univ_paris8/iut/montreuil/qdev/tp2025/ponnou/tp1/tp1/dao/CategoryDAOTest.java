@@ -79,6 +79,7 @@ class CategoryDAOTest {
         Category cat = new Category("Ancien label");
         em.getTransaction().begin();
         categoryDAO.save(em, cat);
+        em.getTransaction().commit();
 
         cat.setLabel("Nouveau label");
         em.getTransaction().begin();
@@ -94,6 +95,7 @@ class CategoryDAOTest {
         em.getTransaction().begin();
         categoryDAO.save(em, cat);
         Long id = cat.getId();
+        em.getTransaction().commit();
 
         em.getTransaction().begin();
         categoryDAO.deleteById(em, id);
