@@ -132,7 +132,9 @@ public class UserService {
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
-            userDAO.deleteById(em, id);
+            if (!userDAO.deleteById(em, id)) {
+                throw new IllegalArgumentException("Utilisateur non trouvé");
+            }
             tx.commit();
         } catch (Exception e) {
             if (tx.isActive()) tx.rollback();

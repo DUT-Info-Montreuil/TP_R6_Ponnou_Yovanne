@@ -98,7 +98,9 @@ public class CategoryService {
                 throw new IllegalStateException("Impossible de supprimer une catégorie contenant des annonces");
             }
             tx.begin();
-            categoryDAO.deleteById(em, id);
+            if (!categoryDAO.deleteById(em, id)) {
+                throw new IllegalArgumentException("Catégorie non trouvée");
+            }
             tx.commit();
         } catch (Exception e) {
             if (tx.isActive()) tx.rollback();

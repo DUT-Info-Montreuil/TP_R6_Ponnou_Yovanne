@@ -13,6 +13,9 @@ import java.util.regex.Pattern;
 public class GenericDAO<T, ID> {
 
     private static final Pattern VALID_FIELD_NAME = Pattern.compile("^[a-zA-Z_][a-zA-Z0-9_.]*$");
+    private static final Pattern VALID_JOIN_CLAUSE = Pattern.compile(
+            "^(LEFT\\s+)?JOIN\\s+FETCH\\s+e\\.[a-zA-Z_][a-zA-Z0-9_.]*$"
+    );
     private static final Set<String> VALID_ORDER_DIRECTIONS = Set.of("ASC", "DESC");
 
     private final Class<T> entityClass;
@@ -44,11 +47,13 @@ public class GenericDAO<T, ID> {
         em.remove(entity);
     }
 
-    public void deleteById(EntityManager em, ID id) {
+    public boolean deleteById(EntityManager em, ID id) {
         T entity = em.find(entityClass, id);
-        if (entity != null) {
-            em.remove(entity);
+        if (entity == null) {
+            return false;
         }
+        em.remove(entity);
+        return true;
     }
 
     // ==================== FILTRAGE GENERIQUE ====================
@@ -62,11 +67,14 @@ public class GenericDAO<T, ID> {
                                    int page,
                                    int size) {
 
-        StringBuilder jpql = new StringBuilder("SELECT e FROM ")
+        boolean hasJoins = joins != null && !joins.isEmpty();
+
+        StringBuilder jpql = new StringBuilder(hasJoins ? "SELECT DISTINCT e FROM " : "SELECT e FROM ")
                 .append(entityClass.getSimpleName())
                 .append(" e ");
 
-        if (joins != null && !joins.isEmpty()) {
+        if (hasJoins) {
+            validateJoinClause(joins);
             jpql.append(joins).append(" ");
         }
 
@@ -147,12 +155,14 @@ public class GenericDAO<T, ID> {
         List<String> conditions = new ArrayList<>();
 
         if (filters != null && !filters.isEmpty()) {
+            int i = 0;
             for (Map.Entry<String, Object> entry : filters.entrySet()) {
                 String field = entry.getKey();
                 validateFieldName(field);
-                String paramName = field.replace(".", "_");
+                String paramName = field.replace(".", "_") + "_" + i;
                 conditions.add("e." + field + " = :" + paramName);
                 params.put(paramName, entry.getValue());
+                i++;
             }
         }
 
@@ -190,6 +200,15 @@ public class GenericDAO<T, ID> {
     private void validateFieldName(String field) {
         if (field == null || !VALID_FIELD_NAME.matcher(field).matches()) {
             throw new IllegalArgumentException("Nom de champ invalide : " + field);
+        }
+    }
+
+    private void validateJoinClause(String joins) {
+        String[] parts = joins.trim().split("\\s+(?=(?:LEFT\\s+)?JOIN\\s+)");
+        for (String part : parts) {
+            if (!VALID_JOIN_CLAUSE.matcher(part.trim()).matches()) {
+                throw new IllegalArgumentException("Clause JOIN invalide : " + part.trim());
+            }
         }
     }
 }

@@ -136,7 +136,9 @@ public class AnnonceService {
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
-            annonceDAO.deleteById(em, id);
+            if (!annonceDAO.deleteById(em, id)) {
+                throw new IllegalArgumentException("Annonce non trouvée");
+            }
             tx.commit();
         } catch (Exception e) {
             if (tx.isActive()) tx.rollback();
