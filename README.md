@@ -18,7 +18,6 @@ Trois entites JPA avec leurs relations :
 - **User** : compte utilisateur (username, email, password) — relation `@OneToMany` vers Annonce
 - **Annonce** : annonce avec titre, description, adresse, statut (DRAFT / PUBLISHED / ARCHIVED) — relations `@ManyToOne` vers User et Category
 - **Category** : categorie d'annonce (label unique) — relation `@OneToMany` vers Annonce
-- **AnnonceStatus** : enum definissant le cycle de vie d'une annonce
 
 ### Couche DAO
 
@@ -30,8 +29,6 @@ Chaque service gere les transactions JPA (begin / commit / rollback) et applique
 - **UserService** : creation, authentification, unicite username/email, changement de mot de passe
 - **AnnonceService** : CRUD, publication, archivage, recherche par mot-cle/categorie/auteur avec pagination
 - **CategoryService** : CRUD avec interdiction de supprimer une categorie contenant des annonces
-
-Les services retournent des `Optional<T>` pour gerer proprement l'absence de resultat.
 
 ### Couche Controller
 
@@ -88,7 +85,7 @@ Les services retournent des `Optional<T>` pour gerer proprement l'absence de res
 
 6. **Resolution du N+1** : le `DISTINCT` dans le `SELECT` du GenericDAO (ajoute automatiquement quand un JOIN FETCH est present) evite les doublons causes par les jointures. Combinee au JOIN FETCH, une seule requete SQL charge les annonces avec leurs relations.
 
-7. **Separation `save()` / `update()` dans le GenericDAO** : `save()` utilise `em.persist()` pour les nouvelles entites, `update()` utilise `em.merge()` pour les entites existantes. Cette separation explicite evite les confusions entre creation et mise a jour.
+7. **Separation `save()` / `update()` dans le GenericDAO** : `save()` utilise `em.persist()` pour les nouvelles entites, `update()` utilise `em.merge()` pour les entites existantes.
 
 8. **Verification `em.contains()` avant `remove()`** : dans la methode `delete()` du GenericDAO, si l'entite n'est pas dans le contexte de persistence courant, elle est d'abord rattachee via `merge()` avant d'etre supprimee, evitant l'`IllegalArgumentException`.
 
