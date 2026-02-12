@@ -1,7 +1,8 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.dao;
 
 import org.junit.jupiter.api.*;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.model.Category;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.Category;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.dao.CategoryDAO;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;

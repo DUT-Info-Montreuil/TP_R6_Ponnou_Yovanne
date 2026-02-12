@@ -8,9 +8,9 @@
     <persistence-unit name="MasterAnnoncePU" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 
-        <class>org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.model.User</class>
-        <class>org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.model.Category</class>
-        <class>org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.model.Annonce</class>
+        <class>org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User</class>
+        <class>org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.Category</class>
+        <class>org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.Annonce</class>
 
         <properties>
             <property name="javax.persistence.jdbc.driver" value="org.postgresql.Driver"/>
