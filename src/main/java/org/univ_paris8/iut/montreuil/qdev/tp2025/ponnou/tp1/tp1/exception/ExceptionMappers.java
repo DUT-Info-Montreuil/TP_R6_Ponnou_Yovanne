@@ -1,12 +1,37 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.exception;
 
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.dto.ErrorResponse;
+
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
-import java.util.Map;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class ExceptionMappers {
+
+    /**
+     * Intercepte les erreurs de Bean Validation (@Valid).
+     * Retourne 400 avec le format normalise :
+     * {"error": "VALIDATION_ERROR", "messages": ["title is required", ...]}
+     */
+    @Provider
+    public static class ConstraintViolationExceptionMapper implements ExceptionMapper<ConstraintViolationException> {
+        @Override
+        public Response toResponse(ConstraintViolationException e) {
+            List<String> messages = e.getConstraintViolations().stream()
+                    .map(ConstraintViolation::getMessage)
+                    .sorted()
+                    .collect(Collectors.toList());
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .type(MediaType.APPLICATION_JSON)
+                    .entity(new ErrorResponse("VALIDATION_ERROR", messages))
+                    .build();
+        }
+    }
 
     @Provider
     public static class IllegalArgumentExceptionMapper implements ExceptionMapper<IllegalArgumentException> {
@@ -14,7 +39,7 @@ public class ExceptionMappers {
         public Response toResponse(IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .type(MediaType.APPLICATION_JSON)
-                    .entity(Map.of("error", e.getMessage()))
+                    .entity(new ErrorResponse("BAD_REQUEST", e.getMessage()))
                     .build();
         }
     }
@@ -25,7 +50,7 @@ public class ExceptionMappers {
         public Response toResponse(IllegalStateException e) {
             return Response.status(Response.Status.CONFLICT)
                     .type(MediaType.APPLICATION_JSON)
-                    .entity(Map.of("error", e.getMessage()))
+                    .entity(new ErrorResponse("CONFLICT", e.getMessage()))
                     .build();
         }
     }
@@ -36,7 +61,7 @@ public class ExceptionMappers {
         public Response toResponse(Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .type(MediaType.APPLICATION_JSON)
-                    .entity(Map.of("error", "Erreur interne du serveur"))
+                    .entity(new ErrorResponse("INTERNAL_ERROR", "Erreur interne du serveur"))
                     .build();
         }
     }

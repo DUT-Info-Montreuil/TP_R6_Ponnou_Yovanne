@@ -1,11 +1,27 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.dto;
 
+import javax.validation.constraints.Email;
+import javax.validation.constraints.Size;
+
+/**
+ * DTO pour PATCH : tous les champs sont optionnels.
+ * Les contraintes de format s'appliquent uniquement si le champ est fourni.
+ */
 public class AnnoncePatchDTO {
 
+    @Size(max = 64, message = "title must not exceed 64 characters")
     private String title;
+
+    @Size(max = 256, message = "description must not exceed 256 characters")
     private String description;
+
+    @Size(max = 64, message = "adress must not exceed 64 characters")
     private String adress;
+
+    @Email(message = "mail must be a valid email")
+    @Size(max = 64, message = "mail must not exceed 64 characters")
     private String mail;
+
     private Long categoryId;
 
     public AnnoncePatchDTO() {

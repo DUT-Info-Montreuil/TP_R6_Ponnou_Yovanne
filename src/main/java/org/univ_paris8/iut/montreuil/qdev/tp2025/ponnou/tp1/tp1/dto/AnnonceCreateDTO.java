@@ -1,15 +1,33 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.dto;
 
-/**
- * DTO de requete pour la creation d'une annonce (POST).
- */
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+
 public class AnnonceCreateDTO {
 
+    @NotBlank(message = "title is required")
+    @Size(max = 64, message = "title must not exceed 64 characters")
     private String title;
+
+    @NotBlank(message = "description is required")
+    @Size(max = 256, message = "description must not exceed 256 characters")
     private String description;
+
+    @NotBlank(message = "adress is required")
+    @Size(max = 64, message = "adress must not exceed 64 characters")
     private String adress;
+
+    @NotBlank(message = "mail is required")
+    @Email(message = "mail must be a valid email")
+    @Size(max = 64, message = "mail must not exceed 64 characters")
     private String mail;
+
+    @NotNull(message = "authorId is required")
     private Long authorId;
+
+    @NotNull(message = "categoryId is required")
     private Long categoryId;
 
     public AnnonceCreateDTO() {

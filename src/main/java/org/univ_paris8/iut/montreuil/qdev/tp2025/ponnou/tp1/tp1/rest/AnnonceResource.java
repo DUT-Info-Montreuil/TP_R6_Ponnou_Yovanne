@@ -4,6 +4,7 @@ import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.dto.*;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.model.Annonce;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.service.AnnonceService;
 
+import javax.validation.Valid;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -49,7 +50,7 @@ public class AnnonceResource {
      * Creation d'une annonce. Retourne 201 Created avec le header Location.
      */
     @POST
-    public Response create(AnnonceCreateDTO dto, @Context UriInfo uriInfo) {
+    public Response create(@Valid AnnonceCreateDTO dto, @Context UriInfo uriInfo) {
         Annonce created = annonceService.create(
                 dto.getTitle(),
                 dto.getDescription(),
@@ -69,7 +70,7 @@ public class AnnonceResource {
      */
     @PUT
     @Path("/{id}")
-    public Response update(@PathParam("id") Long id, AnnonceUpdateDTO dto) {
+    public Response update(@PathParam("id") Long id, @Valid AnnonceUpdateDTO dto) {
         Annonce updated = annonceService.update(
                 id,
                 dto.getTitle(),
@@ -100,7 +101,7 @@ public class AnnonceResource {
      */
     @PATCH
     @Path("/{id}")
-    public Response patch(@PathParam("id") Long id, AnnoncePatchDTO dto) {
+    public Response patch(@PathParam("id") Long id, @Valid AnnoncePatchDTO dto) {
         Annonce patched = annonceService.patch(
                 id,
                 dto.getTitle(),
