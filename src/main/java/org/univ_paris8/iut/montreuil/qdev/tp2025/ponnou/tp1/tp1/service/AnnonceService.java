@@ -131,6 +131,40 @@ public class AnnonceService {
         }
     }
 
+    /**
+     * Mise a jour partielle : seuls les champs non-null sont appliques.
+     */
+    public Annonce patch(Long id, String title, String description, String adress, String mail,
+                         Long categoryId) {
+        EntityManager em = EntityManagerUtil.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
+        try {
+            tx.begin();
+
+            Annonce annonce = annonceDAO.findOneWithFilters(em, Map.of("id", id), JOINS)
+                    .orElseThrow(() -> new IllegalArgumentException("Annonce non trouvée"));
+
+            if (title != null) annonce.setTitle(title);
+            if (description != null) annonce.setDescription(description);
+            if (adress != null) annonce.setAdress(adress);
+            if (mail != null) annonce.setMail(mail);
+            if (categoryId != null) {
+                Category category = categoryDAO.findById(em, categoryId)
+                        .orElseThrow(() -> new IllegalArgumentException("Catégorie non trouvée"));
+                annonce.setCategory(category);
+            }
+
+            Annonce updated = annonceDAO.update(em, annonce);
+            tx.commit();
+            return updated;
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            throw e;
+        } finally {
+            em.close();
+        }
+    }
+
     public void delete(Long id) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         EntityTransaction tx = em.getTransaction();
