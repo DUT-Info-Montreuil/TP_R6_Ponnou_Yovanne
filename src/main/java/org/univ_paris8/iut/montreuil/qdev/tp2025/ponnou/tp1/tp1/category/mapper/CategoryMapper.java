@@ -1,5 +1,6 @@
-package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.dto;
+package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.mapper;
 
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.dto.CategoryDTO;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.Category;
 
 import java.util.List;

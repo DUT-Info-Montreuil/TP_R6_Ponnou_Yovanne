@@ -1,5 +1,6 @@
-package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.dto;
+package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.mapper;
 
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.dto.UserDTO;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
 
 import java.util.List;
