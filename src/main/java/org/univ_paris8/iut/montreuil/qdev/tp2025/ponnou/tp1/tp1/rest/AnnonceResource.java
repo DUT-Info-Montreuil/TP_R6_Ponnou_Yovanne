@@ -3,6 +3,7 @@ package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.rest;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.dto.*;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.exception.ResourceNotFoundException;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.model.Annonce;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.security.Secured;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.service.AnnonceService;
 
 import javax.validation.Valid;
@@ -51,6 +52,7 @@ public class AnnonceResource {
      * Creation d'une annonce. Retourne 201 Created avec le header Location.
      */
     @POST
+    @Secured
     public Response create(@Valid AnnonceCreateDTO dto, @Context UriInfo uriInfo) {
         Annonce created = annonceService.create(
                 dto.getTitle(),
@@ -71,6 +73,7 @@ public class AnnonceResource {
      */
     @PUT
     @Path("/{id}")
+    @Secured
     public Response update(@PathParam("id") Long id, @Valid AnnonceUpdateDTO dto) {
         Annonce updated = annonceService.update(
                 id,
@@ -89,6 +92,7 @@ public class AnnonceResource {
      */
     @DELETE
     @Path("/{id}")
+    @Secured
     public Response delete(@PathParam("id") Long id) {
         annonceService.delete(id);
         return Response.noContent().build();
@@ -102,6 +106,7 @@ public class AnnonceResource {
      */
     @PATCH
     @Path("/{id}")
+    @Secured
     public Response patch(@PathParam("id") Long id, @Valid AnnoncePatchDTO dto) {
         Annonce patched = annonceService.patch(
                 id,
