@@ -3,6 +3,7 @@ package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.service;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.dao.AnnonceDAO;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.dao.CategoryDAO;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.dao.UserDAO;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.exception.ResourceNotFoundException;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.model.Annonce;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.model.AnnonceStatus;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.model.Category;
@@ -34,10 +35,10 @@ public class AnnonceService {
             tx.begin();
 
             User author = userDAO.findById(em, authorId)
-                    .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé"));
 
             Category category = categoryDAO.findById(em, categoryId)
-                    .orElseThrow(() -> new IllegalArgumentException("Catégorie non trouvée"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Catégorie non trouvée"));
 
             Annonce annonce = new Annonce(title, description, adress, mail);
             annonce.setAuthor(author);
@@ -63,10 +64,10 @@ public class AnnonceService {
             tx.begin();
 
             Annonce annonce = annonceDAO.findOneWithFilters(em, Map.of("id", id), JOINS)
-                    .orElseThrow(() -> new IllegalArgumentException("Annonce non trouvée"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvée"));
 
             Category category = categoryDAO.findById(em, categoryId)
-                    .orElseThrow(() -> new IllegalArgumentException("Catégorie non trouvée"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Catégorie non trouvée"));
 
             annonce.setTitle(title);
             annonce.setDescription(description);
@@ -92,7 +93,7 @@ public class AnnonceService {
             tx.begin();
 
             Annonce annonce = annonceDAO.findOneWithFilters(em, Map.of("id", id), JOINS)
-                    .orElseThrow(() -> new IllegalArgumentException("Annonce non trouvée"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvée"));
 
             if (annonce.getStatus() == AnnonceStatus.ARCHIVED) {
                 throw new IllegalStateException("Impossible de publier une annonce archivée");
@@ -117,7 +118,7 @@ public class AnnonceService {
             tx.begin();
 
             Annonce annonce = annonceDAO.findOneWithFilters(em, Map.of("id", id), JOINS)
-                    .orElseThrow(() -> new IllegalArgumentException("Annonce non trouvée"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvée"));
 
             annonce.setStatus(AnnonceStatus.ARCHIVED);
             Annonce updated = annonceDAO.update(em, annonce);
@@ -142,7 +143,7 @@ public class AnnonceService {
             tx.begin();
 
             Annonce annonce = annonceDAO.findOneWithFilters(em, Map.of("id", id), JOINS)
-                    .orElseThrow(() -> new IllegalArgumentException("Annonce non trouvée"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvée"));
 
             if (title != null) annonce.setTitle(title);
             if (description != null) annonce.setDescription(description);
@@ -150,7 +151,7 @@ public class AnnonceService {
             if (mail != null) annonce.setMail(mail);
             if (categoryId != null) {
                 Category category = categoryDAO.findById(em, categoryId)
-                        .orElseThrow(() -> new IllegalArgumentException("Catégorie non trouvée"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Catégorie non trouvée"));
                 annonce.setCategory(category);
             }
 
@@ -171,7 +172,7 @@ public class AnnonceService {
         try {
             tx.begin();
             if (!annonceDAO.deleteById(em, id)) {
-                throw new IllegalArgumentException("Annonce non trouvée");
+                throw new ResourceNotFoundException("Annonce non trouvée");
             }
             tx.commit();
         } catch (Exception e) {

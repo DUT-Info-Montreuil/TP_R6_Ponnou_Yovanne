@@ -33,6 +33,23 @@ public class ExceptionMappers {
         }
     }
 
+    /**
+     * 404 — Ressource inexistante.
+     */
+    @Provider
+    public static class ResourceNotFoundExceptionMapper implements ExceptionMapper<ResourceNotFoundException> {
+        @Override
+        public Response toResponse(ResourceNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .type(MediaType.APPLICATION_JSON)
+                    .entity(new ErrorResponse("NOT_FOUND", e.getMessage()))
+                    .build();
+        }
+    }
+
+    /**
+     * 400 — Erreur client (requete invalide).
+     */
     @Provider
     public static class IllegalArgumentExceptionMapper implements ExceptionMapper<IllegalArgumentException> {
         @Override

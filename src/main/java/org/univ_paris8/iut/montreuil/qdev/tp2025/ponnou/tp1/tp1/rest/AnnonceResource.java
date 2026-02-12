@@ -1,6 +1,7 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.rest;
 
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.dto.*;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.exception.ResourceNotFoundException;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.model.Annonce;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.service.AnnonceService;
 
@@ -41,7 +42,7 @@ public class AnnonceResource {
     @Path("/{id}")
     public Response getById(@PathParam("id") Long id) {
         Annonce annonce = annonceService.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Annonce non trouvée avec l'id : " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvée avec l'id : " + id));
         return Response.ok(AnnonceMapper.toDTO(annonce)).build();
     }
 
