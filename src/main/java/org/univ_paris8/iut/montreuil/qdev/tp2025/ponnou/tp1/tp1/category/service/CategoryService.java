@@ -1,9 +1,9 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.service;
 
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.dao.AnnonceDAO;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.repository.AnnonceRepository;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.config.EntityManagerUtil;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.Category;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.dao.CategoryDAO;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.repository.CategoryRepository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
@@ -13,8 +13,8 @@ import java.util.Optional;
 
 public class CategoryService {
 
-    private final CategoryDAO categoryDAO = new CategoryDAO();
-    private final AnnonceDAO annonceDAO = new AnnonceDAO();
+    private final CategoryRepository categoryRepository = new CategoryRepository();
+    private final AnnonceRepository annonceRepository = new AnnonceRepository();
 
     public Category create(String label) {
         EntityManager em = EntityManagerUtil.getEntityManager();
@@ -22,12 +22,12 @@ public class CategoryService {
         try {
             tx.begin();
 
-            if (categoryDAO.countWithFilters(em, Map.of("label", label)) > 0) {
+            if (categoryRepository.countWithFilters(em, Map.of("label", label)) > 0) {
                 throw new IllegalArgumentException("Cette catégorie existe déjà");
             }
 
             Category category = new Category(label);
-            Category saved = categoryDAO.save(em, category);
+            Category saved = categoryRepository.save(em, category);
             tx.commit();
             return saved;
         } catch (Exception e) {
@@ -44,15 +44,15 @@ public class CategoryService {
         try {
             tx.begin();
 
-            Category category = categoryDAO.findById(em, id)
+            Category category = categoryRepository.findById(em, id)
                     .orElseThrow(() -> new IllegalArgumentException("Catégorie non trouvée"));
 
-            if (!category.getLabel().equals(label) && categoryDAO.countWithFilters(em, Map.of("label", label)) > 0) {
+            if (!category.getLabel().equals(label) && categoryRepository.countWithFilters(em, Map.of("label", label)) > 0) {
                 throw new IllegalArgumentException("Cette catégorie existe déjà");
             }
 
             category.setLabel(label);
-            Category updated = categoryDAO.update(em, category);
+            Category updated = categoryRepository.update(em, category);
             tx.commit();
             return updated;
         } catch (Exception e) {
@@ -66,7 +66,7 @@ public class CategoryService {
     public Optional<Category> findById(Long id) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            return categoryDAO.findById(em, id);
+            return categoryRepository.findById(em, id);
         } finally {
             em.close();
         }
@@ -75,7 +75,7 @@ public class CategoryService {
     public Optional<Category> findByLabel(String label) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            return categoryDAO.findOneWithFilters(em, Map.of("label", label));
+            return categoryRepository.findOneWithFilters(em, Map.of("label", label));
         } finally {
             em.close();
         }
@@ -84,7 +84,7 @@ public class CategoryService {
     public List<Category> findAll() {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            return categoryDAO.findWithFilters(em, null, null, null, "label ASC", null);
+            return categoryRepository.findWithFilters(em, null, null, null, "label ASC", null);
         } finally {
             em.close();
         }
@@ -93,7 +93,7 @@ public class CategoryService {
     public List<Category> findAllPaginated(int page, int size) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            return categoryDAO.findWithFilters(em, null, null, null, "label ASC", null, page, size);
+            return categoryRepository.findWithFilters(em, null, null, null, "label ASC", null, page, size);
         } finally {
             em.close();
         }
@@ -102,7 +102,7 @@ public class CategoryService {
     public long count() {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            return categoryDAO.count(em);
+            return categoryRepository.count(em);
         } finally {
             em.close();
         }
@@ -114,17 +114,17 @@ public class CategoryService {
         try {
             tx.begin();
 
-            Category category = categoryDAO.findById(em, id)
+            Category category = categoryRepository.findById(em, id)
                     .orElseThrow(() -> new IllegalArgumentException("Catégorie non trouvée"));
 
             if (label != null) {
-                if (!category.getLabel().equals(label) && categoryDAO.countWithFilters(em, Map.of("label", label)) > 0) {
+                if (!category.getLabel().equals(label) && categoryRepository.countWithFilters(em, Map.of("label", label)) > 0) {
                     throw new IllegalArgumentException("Cette catégorie existe déjà");
                 }
                 category.setLabel(label);
             }
 
-            Category updated = categoryDAO.update(em, category);
+            Category updated = categoryRepository.update(em, category);
             tx.commit();
             return updated;
         } catch (Exception e) {
@@ -139,11 +139,11 @@ public class CategoryService {
         EntityManager em = EntityManagerUtil.getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
-            if (annonceDAO.countWithFilters(em, Map.of("category.id", id)) > 0) {
+            if (annonceRepository.countWithFilters(em, Map.of("category.id", id)) > 0) {
                 throw new IllegalStateException("Impossible de supprimer une catégorie contenant des annonces");
             }
             tx.begin();
-            if (!categoryDAO.deleteById(em, id)) {
+            if (!categoryRepository.deleteById(em, id)) {
                 throw new IllegalArgumentException("Catégorie non trouvée");
             }
             tx.commit();

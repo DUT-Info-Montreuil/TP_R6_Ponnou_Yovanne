@@ -1,13 +1,11 @@
-package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.dao;
+package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.repository;
 
 import org.junit.jupiter.api.*;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.Annonce;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.dao.AnnonceDAO;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.repository.AnnonceRepository;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.AnnonceStatus;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.Category;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.dao.CategoryDAO;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.dao.UserDAO;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -16,14 +14,11 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Niveau 1 – Tests DAO Annonce : CRUD + recherche et pagination
- */
-class AnnonceDAOTest {
+class AnnonceRepositoryTest {
 
     private static EntityManagerFactory emf;
     private EntityManager em;
-    private AnnonceDAO annonceDAO;
+    private AnnonceRepository annonceRepository;
 
     private User testUser;
     private Category testCategory;
@@ -41,9 +36,8 @@ class AnnonceDAOTest {
     @BeforeEach
     void setUp() {
         em = emf.createEntityManager();
-        annonceDAO = new AnnonceDAO();
+        annonceRepository = new AnnonceRepository();
 
-        // Créer les entités de référence
         testUser = new User("testuser", "testuser@test.com", "password123");
         testCategory = new Category("Immobilier");
 
@@ -82,7 +76,7 @@ class AnnonceDAOTest {
         Annonce annonce = createAnnonce("Appartement F3", "Bel appart lumineux", AnnonceStatus.DRAFT);
 
         em.getTransaction().begin();
-        Annonce saved = annonceDAO.save(em, annonce);
+        Annonce saved = annonceRepository.save(em, annonce);
 
         assertNotNull(saved.getId());
         assertEquals("Appartement F3", saved.getTitle());
@@ -97,26 +91,26 @@ class AnnonceDAOTest {
     void findById_shouldReturnAnnonce() {
         Annonce annonce = createAnnonce("Maison", "Grande maison", AnnonceStatus.DRAFT);
         em.getTransaction().begin();
-        annonceDAO.save(em, annonce);
+        annonceRepository.save(em, annonce);
 
-        Optional<Annonce> found = annonceDAO.findById(em, annonce.getId());
+        Optional<Annonce> found = annonceRepository.findById(em, annonce.getId());
 
         assertTrue(found.isPresent());
         assertEquals("Maison", found.get().getTitle());
     }
 
     @Test
-    @DisplayName("update() met à jour le titre et le statut")
+    @DisplayName("update() met a jour le titre et le statut")
     void update_shouldModifyAnnonce() {
         Annonce annonce = createAnnonce("Ancien titre", "Description", AnnonceStatus.DRAFT);
         em.getTransaction().begin();
-        annonceDAO.save(em, annonce);
+        annonceRepository.save(em, annonce);
         em.getTransaction().commit();
 
         annonce.setTitle("Nouveau titre");
         annonce.setStatus(AnnonceStatus.PUBLISHED);
         em.getTransaction().begin();
-        Annonce updated = annonceDAO.update(em, annonce);
+        Annonce updated = annonceRepository.update(em, annonce);
 
         assertEquals("Nouveau titre", updated.getTitle());
         assertEquals(AnnonceStatus.PUBLISHED, updated.getStatus());
@@ -127,14 +121,14 @@ class AnnonceDAOTest {
     void deleteById_shouldRemoveAnnonce() {
         Annonce annonce = createAnnonce("A supprimer", "Desc", AnnonceStatus.DRAFT);
         em.getTransaction().begin();
-        annonceDAO.save(em, annonce);
+        annonceRepository.save(em, annonce);
         Long id = annonce.getId();
         em.getTransaction().commit();
 
         em.getTransaction().begin();
-        annonceDAO.deleteById(em, id);
+        annonceRepository.deleteById(em, id);
 
-        assertTrue(annonceDAO.findById(em, id).isEmpty());
+        assertTrue(annonceRepository.findById(em, id).isEmpty());
     }
 
     // ==================== TESTS RECHERCHE ET PAGINATION ====================
@@ -148,7 +142,7 @@ class AnnonceDAOTest {
         em.persist(createAnnonce("Published 2", "Desc", AnnonceStatus.PUBLISHED));
         em.getTransaction().commit();
 
-        List<Annonce> published = annonceDAO.findWithFilters(em,
+        List<Annonce> published = annonceRepository.findWithFilters(em,
                 Map.of("status", AnnonceStatus.PUBLISHED),
                 null, null, "date DESC", null);
 
@@ -157,7 +151,7 @@ class AnnonceDAOTest {
     }
 
     @Test
-    @DisplayName("findWithFilters() recherche par mot-clé dans titre et description")
+    @DisplayName("findWithFilters() recherche par mot-cle dans titre et description")
     void findWithFilters_shouldSearchByKeyword() {
         em.getTransaction().begin();
         em.persist(createAnnonce("Appartement lumineux", "Centre ville", AnnonceStatus.PUBLISHED));
@@ -165,7 +159,7 @@ class AnnonceDAOTest {
         em.persist(createAnnonce("Studio", "Petit studio", AnnonceStatus.PUBLISHED));
         em.getTransaction().commit();
 
-        List<Annonce> results = annonceDAO.findWithFilters(em,
+        List<Annonce> results = annonceRepository.findWithFilters(em,
                 Map.of("status", AnnonceStatus.PUBLISHED),
                 "lumineux",
                 new String[]{"title", "description"},
@@ -175,7 +169,7 @@ class AnnonceDAOTest {
     }
 
     @Test
-    @DisplayName("findWithFilters() pagine correctement les résultats")
+    @DisplayName("findWithFilters() pagine correctement les resultats")
     void findWithFilters_shouldPaginateResults() {
         em.getTransaction().begin();
         for (int i = 0; i < 15; i++) {
@@ -184,30 +178,26 @@ class AnnonceDAOTest {
         }
         em.getTransaction().commit();
 
-        // Page 0, taille 5
-        List<Annonce> page0 = annonceDAO.findWithFilters(em,
+        List<Annonce> page0 = annonceRepository.findWithFilters(em,
                 Map.of("status", AnnonceStatus.PUBLISHED),
                 null, null, "title ASC", null, 0, 5);
         assertEquals(5, page0.size());
 
-        // Page 1, taille 5
-        List<Annonce> page1 = annonceDAO.findWithFilters(em,
+        List<Annonce> page1 = annonceRepository.findWithFilters(em,
                 Map.of("status", AnnonceStatus.PUBLISHED),
                 null, null, "title ASC", null, 1, 5);
         assertEquals(5, page1.size());
 
-        // Page 2, taille 5 (les 5 derniers)
-        List<Annonce> page2 = annonceDAO.findWithFilters(em,
+        List<Annonce> page2 = annonceRepository.findWithFilters(em,
                 Map.of("status", AnnonceStatus.PUBLISHED),
                 null, null, "title ASC", null, 2, 5);
         assertEquals(5, page2.size());
 
-        // Vérifier que les pages ne se chevauchent pas
         assertNotEquals(page0.get(0).getId(), page1.get(0).getId());
     }
 
     @Test
-    @DisplayName("countWithFilters() compte le bon nombre d'annonces publiées")
+    @DisplayName("countWithFilters() compte le bon nombre d'annonces publiees")
     void countWithFilters_shouldCountCorrectly() {
         em.getTransaction().begin();
         em.persist(createAnnonce("A1", "D1", AnnonceStatus.PUBLISHED));
@@ -216,10 +206,10 @@ class AnnonceDAOTest {
         em.persist(createAnnonce("A4", "D4", AnnonceStatus.ARCHIVED));
         em.getTransaction().commit();
 
-        long totalCount = annonceDAO.count(em);
+        long totalCount = annonceRepository.count(em);
         assertEquals(4, totalCount);
 
-        long publishedCount = annonceDAO.countWithFilters(em, Map.of("status", AnnonceStatus.PUBLISHED));
+        long publishedCount = annonceRepository.countWithFilters(em, Map.of("status", AnnonceStatus.PUBLISHED));
         assertEquals(2, publishedCount);
     }
 
@@ -240,7 +230,7 @@ class AnnonceDAOTest {
         em.persist(annonceUser2);
         em.getTransaction().commit();
 
-        List<Annonce> byAuthor = annonceDAO.findWithFilters(em,
+        List<Annonce> byAuthor = annonceRepository.findWithFilters(em,
                 Map.of("author.id", testUser.getId()),
                 null, null, "date DESC",
                 "LEFT JOIN FETCH e.author LEFT JOIN FETCH e.category");
@@ -250,15 +240,15 @@ class AnnonceDAOTest {
     }
 
     @Test
-    @DisplayName("findWithFilters() filtre par catégorie")
+    @DisplayName("findWithFilters() filtre par categorie")
     void findWithFilters_shouldFilterByCategory() {
-        Category otherCategory = new Category("Véhicules");
+        Category otherCategory = new Category("Vehicules");
         em.getTransaction().begin();
         em.persist(otherCategory);
         em.getTransaction().commit();
 
         Annonce a1 = createAnnonce("Immobilier annonce", "Desc", AnnonceStatus.PUBLISHED);
-        Annonce a2 = createAnnonce("Véhicule annonce", "Desc", AnnonceStatus.PUBLISHED);
+        Annonce a2 = createAnnonce("Vehicule annonce", "Desc", AnnonceStatus.PUBLISHED);
         a2.setCategory(otherCategory);
 
         em.getTransaction().begin();
@@ -270,7 +260,7 @@ class AnnonceDAOTest {
         filters.put("category.id", testCategory.getId());
         filters.put("status", AnnonceStatus.PUBLISHED);
 
-        List<Annonce> byCat = annonceDAO.findWithFilters(em, filters,
+        List<Annonce> byCat = annonceRepository.findWithFilters(em, filters,
                 null, null, "date DESC",
                 "LEFT JOIN FETCH e.author LEFT JOIN FETCH e.category");
 
@@ -286,15 +276,13 @@ class AnnonceDAOTest {
         em.persist(annonce);
         em.getTransaction().commit();
 
-        // Nouvel EntityManager pour vérifier le chargement eager via JOIN FETCH
         EntityManager em2 = emf.createEntityManager();
         try {
-            Optional<Annonce> found = annonceDAO.findOneWithFilters(em2,
+            Optional<Annonce> found = annonceRepository.findOneWithFilters(em2,
                     Map.of("id", annonce.getId()),
                     "LEFT JOIN FETCH e.author LEFT JOIN FETCH e.category");
 
             assertTrue(found.isPresent());
-            // Ces accès ne doivent pas lancer de LazyInitializationException
             assertEquals("testuser", found.get().getAuthor().getUsername());
             assertEquals("Immobilier", found.get().getCategory().getLabel());
         } finally {

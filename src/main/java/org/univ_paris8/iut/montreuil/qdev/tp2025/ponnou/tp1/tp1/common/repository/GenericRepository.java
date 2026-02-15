@@ -1,4 +1,4 @@
-package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.dao;
+package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.repository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -11,7 +11,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class GenericDAO<T, ID> {
+public class GenericRepository<T, ID> {
 
     private static final Pattern VALID_FIELD_NAME = Pattern.compile("^[a-zA-Z_][a-zA-Z0-9_.]*$");
     private static final Pattern VALID_JOIN_CLAUSE = Pattern.compile(
@@ -21,7 +21,7 @@ public class GenericDAO<T, ID> {
 
     private final Class<T> entityClass;
 
-    public GenericDAO(Class<T> entityClass) {
+    public GenericRepository(Class<T> entityClass) {
         this.entityClass = entityClass;
     }
 

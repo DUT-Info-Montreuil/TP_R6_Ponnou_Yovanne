@@ -88,7 +88,7 @@ class AnnonceServiceTest {
     @Test
     @DisplayName("create() échoue si l'auteur n'existe pas")
     void create_shouldFail_whenAuthorNotFound() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ResourceNotFoundException.class,
                 () -> annonceService.create("Titre", "Desc", "Addr", "m@t.com",
                         999L, testCategory.getId()));
     }
@@ -96,7 +96,7 @@ class AnnonceServiceTest {
     @Test
     @DisplayName("create() échoue si la catégorie n'existe pas")
     void create_shouldFail_whenCategoryNotFound() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ResourceNotFoundException.class,
                 () -> annonceService.create("Titre", "Desc", "Addr", "m@t.com",
                         testUser.getId(), 999L));
     }
@@ -109,7 +109,7 @@ class AnnonceServiceTest {
         Annonce annonce = annonceService.create("A publier", "Desc",
                 "Paris", "m@t.com", testUser.getId(), testCategory.getId());
 
-        Annonce published = annonceService.publish(annonce.getId());
+        Annonce published = annonceService.publish(annonce.getId(), testUser.getId());
 
         assertEquals(AnnonceStatus.PUBLISHED, published.getStatus());
     }
@@ -119,19 +119,19 @@ class AnnonceServiceTest {
     void publish_shouldFail_whenArchived() {
         Annonce annonce = annonceService.create("A archiver", "Desc",
                 "Paris", "m@t.com", testUser.getId(), testCategory.getId());
-        annonceService.publish(annonce.getId());
-        annonceService.archive(annonce.getId());
+        annonceService.publish(annonce.getId(), testUser.getId());
+        annonceService.archive(annonce.getId(), testUser.getId());
 
         IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> annonceService.publish(annonce.getId()));
+                () -> annonceService.publish(annonce.getId(), testUser.getId()));
         assertTrue(ex.getMessage().contains("archivée"));
     }
 
     @Test
     @DisplayName("publish() échoue pour un ID inexistant")
     void publish_shouldFail_whenNotFound() {
-        assertThrows(IllegalArgumentException.class,
-                () -> annonceService.publish(999L));
+        assertThrows(ResourceNotFoundException.class,
+                () -> annonceService.publish(999L, testUser.getId()));
     }
 
     // ==================== Tests archivage ====================
@@ -141,9 +141,9 @@ class AnnonceServiceTest {
     void archive_shouldSetStatusToArchived() {
         Annonce annonce = annonceService.create("A archiver", "Desc",
                 "Paris", "m@t.com", testUser.getId(), testCategory.getId());
-        annonceService.publish(annonce.getId());
+        annonceService.publish(annonce.getId(), testUser.getId());
 
-        Annonce archived = annonceService.archive(annonce.getId());
+        Annonce archived = annonceService.archive(annonce.getId(), testUser.getId());
 
         assertEquals(AnnonceStatus.ARCHIVED, archived.getStatus());
     }
@@ -156,7 +156,7 @@ class AnnonceServiceTest {
         Annonce annonce = annonceService.create("Ancien", "Ancienne desc",
                 "Paris", "m@t.com", testUser.getId(), testCategory.getId());
 
-        Annonce updated = annonceService.update(annonce.getId(),
+        Annonce updated = annonceService.update(annonce.getId(), testUser.getId(),
                 "Nouveau", "Nouvelle desc", "Lyon", "new@t.com", testCategory.getId());
 
         assertEquals("Nouveau", updated.getTitle());
@@ -172,7 +172,7 @@ class AnnonceServiceTest {
     void findPublishedPaginated_shouldReturnOnlyPublished() {
         annonceService.create("Draft", "D", "P", "m@t.com", testUser.getId(), testCategory.getId());
         Annonce a2 = annonceService.create("Published", "D", "P", "m@t.com", testUser.getId(), testCategory.getId());
-        annonceService.publish(a2.getId());
+        annonceService.publish(a2.getId(), testUser.getId());
 
         List<Annonce> results = annonceService.findPublishedPaginated(0, 10);
 
@@ -185,13 +185,13 @@ class AnnonceServiceTest {
     void searchByKeyword_shouldSearchInTitleAndDescription() {
         Annonce a1 = annonceService.create("Appartement lumineux", "Centre ville",
                 "P", "m@t.com", testUser.getId(), testCategory.getId());
-        annonceService.publish(a1.getId());
+        annonceService.publish(a1.getId(), testUser.getId());
         Annonce a2 = annonceService.create("Studio", "Très lumineux et calme",
                 "P", "m@t.com", testUser.getId(), testCategory.getId());
-        annonceService.publish(a2.getId());
+        annonceService.publish(a2.getId(), testUser.getId());
         Annonce a3 = annonceService.create("Maison", "Grand jardin",
                 "P", "m@t.com", testUser.getId(), testCategory.getId());
-        annonceService.publish(a3.getId());
+        annonceService.publish(a3.getId(), testUser.getId());
 
         List<Annonce> results = annonceService.searchByKeywordPaginated("lumineux", 0, 10);
 
@@ -222,7 +222,7 @@ class AnnonceServiceTest {
     void countPublished_shouldCountCorrectly() {
         annonceService.create("Draft", "D", "P", "m@t.com", testUser.getId(), testCategory.getId());
         Annonce a = annonceService.create("Pub", "D", "P", "m@t.com", testUser.getId(), testCategory.getId());
-        annonceService.publish(a.getId());
+        annonceService.publish(a.getId(), testUser.getId());
 
         assertEquals(1, annonceService.countPublished());
         assertEquals(2, annonceService.count());
@@ -231,14 +231,28 @@ class AnnonceServiceTest {
     // ==================== Tests suppression ====================
 
     @Test
-    @DisplayName("delete() supprime l'annonce")
+    @DisplayName("delete() supprime l'annonce archivée")
     void delete_shouldRemoveAnnonce() {
         Annonce annonce = annonceService.create("A suppr", "D", "P", "m@t.com",
                 testUser.getId(), testCategory.getId());
 
-        annonceService.delete(annonce.getId());
+        // Archivage obligatoire avant suppression (DRAFT → PUBLISHED → ARCHIVED)
+        annonceService.publish(annonce.getId(), testUser.getId());
+        annonceService.archive(annonce.getId(), testUser.getId());
+
+        annonceService.delete(annonce.getId(), testUser.getId());
 
         assertTrue(annonceService.findById(annonce.getId()).isEmpty());
+    }
+
+    @Test
+    @DisplayName("delete() échoue si l'annonce n'est pas archivée")
+    void delete_shouldFail_whenNotArchived() {
+        Annonce annonce = annonceService.create("Non archivée", "D", "P", "m@t.com",
+                testUser.getId(), testCategory.getId());
+
+        assertThrows(IllegalStateException.class,
+                () -> annonceService.delete(annonce.getId(), testUser.getId()));
     }
 
     // ==================== Vérification des appels ====================

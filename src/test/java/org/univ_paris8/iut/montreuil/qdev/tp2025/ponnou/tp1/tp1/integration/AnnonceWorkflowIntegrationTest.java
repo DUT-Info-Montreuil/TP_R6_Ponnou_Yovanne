@@ -96,7 +96,7 @@ class AnnonceWorkflowIntegrationTest {
         assertTrue(publishedBefore.isEmpty());
 
         // 5. Publication de l'annonce
-        Annonce published = annonceService.publish(annonce.getId());
+        Annonce published = annonceService.publish(annonce.getId(), user.getId());
         assertEquals(AnnonceStatus.PUBLISHED, published.getStatus());
 
         // 6. L'annonce PUBLISHED apparaît maintenant dans les résultats
@@ -128,7 +128,7 @@ class AnnonceWorkflowIntegrationTest {
             Annonce a = annonceService.create(
                     "Service " + i, "Description du service " + i,
                     "Paris", "m@t.com", user.getId(), cat.getId());
-            annonceService.publish(a.getId());
+            annonceService.publish(a.getId(), user.getId());
         }
 
         // Page 0, taille 5 → 5 résultats
@@ -157,12 +157,12 @@ class AnnonceWorkflowIntegrationTest {
                 user.getId(), cat.getId());
 
         // DRAFT → PUBLISHED → ARCHIVED
-        annonceService.publish(annonce.getId());
-        annonceService.archive(annonce.getId());
+        annonceService.publish(annonce.getId(), user.getId());
+        annonceService.archive(annonce.getId(), user.getId());
 
         // ARCHIVED → PUBLISHED doit échouer
         assertThrows(IllegalStateException.class,
-                () -> annonceService.publish(annonce.getId()));
+                () -> annonceService.publish(annonce.getId(), user.getId()));
 
         // L'annonce archivée n'apparaît plus dans les recherches publiées
         assertEquals(0, annonceService.countPublished());

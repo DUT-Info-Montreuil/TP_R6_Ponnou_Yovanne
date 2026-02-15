@@ -2,13 +2,13 @@ package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.service
 
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.Annonce;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.AnnonceStatus;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.dao.AnnonceDAO;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.repository.AnnonceRepository;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.Category;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.dao.CategoryDAO;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.repository.CategoryRepository;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ForbiddenOperationException;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ResourceNotFoundException;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.dao.UserDAO;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.repository.UserRepository;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.config.EntityManagerUtil;
 
 import javax.persistence.EntityManager;
@@ -24,9 +24,9 @@ public class AnnonceService {
     private static final String ORDER_BY = "date DESC";
     private static final String[] KEYWORD_FIELDS = {"title", "description"};
 
-    private final AnnonceDAO annonceDAO = new AnnonceDAO();
-    private final UserDAO userDAO = new UserDAO();
-    private final CategoryDAO categoryDAO = new CategoryDAO();
+    private final AnnonceRepository annonceRepository = new AnnonceRepository();
+    private final UserRepository userRepository = new UserRepository();
+    private final CategoryRepository categoryRepository = new CategoryRepository();
 
     public Annonce create(String title, String description, String adress, String mail,
                           Long authenticatedUserId, Long categoryId) {
@@ -35,10 +35,10 @@ public class AnnonceService {
         try {
             tx.begin();
 
-            User author = userDAO.findById(em, authenticatedUserId)
+            User author = userRepository.findById(em, authenticatedUserId)
                     .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé"));
 
-            Category category = categoryDAO.findById(em, categoryId)
+            Category category = categoryRepository.findById(em, categoryId)
                     .orElseThrow(() -> new ResourceNotFoundException("Catégorie non trouvée"));
 
             Annonce annonce = new Annonce(title, description, adress, mail);
@@ -46,7 +46,7 @@ public class AnnonceService {
             annonce.setCategory(category);
             annonce.setStatus(AnnonceStatus.DRAFT);
 
-            Annonce saved = annonceDAO.save(em, annonce);
+            Annonce saved = annonceRepository.save(em, annonce);
             tx.commit();
             return saved;
         } catch (Exception e) {
@@ -64,13 +64,13 @@ public class AnnonceService {
         try {
             tx.begin();
 
-            Annonce annonce = annonceDAO.findOneWithFilters(em, Map.of("id", id), JOINS)
+            Annonce annonce = annonceRepository.findOneWithFilters(em, Map.of("id", id), JOINS)
                     .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvée"));
 
             checkOwnership(annonce, authenticatedUserId);
             checkNotPublished(annonce);
 
-            Category category = categoryDAO.findById(em, categoryId)
+            Category category = categoryRepository.findById(em, categoryId)
                     .orElseThrow(() -> new ResourceNotFoundException("Catégorie non trouvée"));
 
             annonce.setTitle(title);
@@ -79,7 +79,7 @@ public class AnnonceService {
             annonce.setMail(mail);
             annonce.setCategory(category);
 
-            Annonce updated = annonceDAO.update(em, annonce);
+            Annonce updated = annonceRepository.update(em, annonce);
             tx.commit();
             return updated;
         } catch (Exception e) {
@@ -96,7 +96,7 @@ public class AnnonceService {
         try {
             tx.begin();
 
-            Annonce annonce = annonceDAO.findOneWithFilters(em, Map.of("id", id), JOINS)
+            Annonce annonce = annonceRepository.findOneWithFilters(em, Map.of("id", id), JOINS)
                     .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvée"));
 
             checkOwnership(annonce, authenticatedUserId);
@@ -106,7 +106,7 @@ public class AnnonceService {
             }
 
             annonce.setStatus(AnnonceStatus.PUBLISHED);
-            Annonce updated = annonceDAO.update(em, annonce);
+            Annonce updated = annonceRepository.update(em, annonce);
             tx.commit();
             return updated;
         } catch (Exception e) {
@@ -123,13 +123,13 @@ public class AnnonceService {
         try {
             tx.begin();
 
-            Annonce annonce = annonceDAO.findOneWithFilters(em, Map.of("id", id), JOINS)
+            Annonce annonce = annonceRepository.findOneWithFilters(em, Map.of("id", id), JOINS)
                     .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvée"));
 
             checkOwnership(annonce, authenticatedUserId);
 
             annonce.setStatus(AnnonceStatus.ARCHIVED);
-            Annonce updated = annonceDAO.update(em, annonce);
+            Annonce updated = annonceRepository.update(em, annonce);
             tx.commit();
             return updated;
         } catch (Exception e) {
@@ -147,7 +147,7 @@ public class AnnonceService {
         try {
             tx.begin();
 
-            Annonce annonce = annonceDAO.findOneWithFilters(em, Map.of("id", id), JOINS)
+            Annonce annonce = annonceRepository.findOneWithFilters(em, Map.of("id", id), JOINS)
                     .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvée"));
 
             checkOwnership(annonce, authenticatedUserId);
@@ -158,12 +158,12 @@ public class AnnonceService {
             if (adress != null) annonce.setAdress(adress);
             if (mail != null) annonce.setMail(mail);
             if (categoryId != null) {
-                Category category = categoryDAO.findById(em, categoryId)
+                Category category = categoryRepository.findById(em, categoryId)
                         .orElseThrow(() -> new ResourceNotFoundException("Catégorie non trouvée"));
                 annonce.setCategory(category);
             }
 
-            Annonce updated = annonceDAO.update(em, annonce);
+            Annonce updated = annonceRepository.update(em, annonce);
             tx.commit();
             return updated;
         } catch (Exception e) {
@@ -180,7 +180,7 @@ public class AnnonceService {
         try {
             tx.begin();
 
-            Annonce annonce = annonceDAO.findOneWithFilters(em, Map.of("id", id), JOINS)
+            Annonce annonce = annonceRepository.findOneWithFilters(em, Map.of("id", id), JOINS)
                     .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvée"));
 
             checkOwnership(annonce, authenticatedUserId);
@@ -190,7 +190,7 @@ public class AnnonceService {
                         "L'annonce doit être archivée avant d'être supprimée. Statut actuel : " + annonce.getStatus());
             }
 
-            annonceDAO.delete(em, annonce);
+            annonceRepository.delete(em, annonce);
             tx.commit();
         } catch (Exception e) {
             if (tx.isActive()) tx.rollback();
@@ -203,7 +203,7 @@ public class AnnonceService {
     public Optional<Annonce> findById(Long id) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            return annonceDAO.findOneWithFilters(em, Map.of("id", id), JOINS);
+            return annonceRepository.findOneWithFilters(em, Map.of("id", id), JOINS);
         } finally {
             em.close();
         }
@@ -212,7 +212,7 @@ public class AnnonceService {
     public List<Annonce> findAllPaginated(int page, int size) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            return annonceDAO.findWithFilters(em, null, null, null, ORDER_BY, JOINS, page, size);
+            return annonceRepository.findWithFilters(em, null, null, null, ORDER_BY, JOINS, page, size);
         } finally {
             em.close();
         }
@@ -221,7 +221,7 @@ public class AnnonceService {
     public List<Annonce> findPublishedPaginated(int page, int size) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            return annonceDAO.findWithFilters(em, Map.of("status", AnnonceStatus.PUBLISHED), null, null, ORDER_BY, JOINS, page, size);
+            return annonceRepository.findWithFilters(em, Map.of("status", AnnonceStatus.PUBLISHED), null, null, ORDER_BY, JOINS, page, size);
         } finally {
             em.close();
         }
@@ -230,7 +230,7 @@ public class AnnonceService {
     public List<Annonce> findByAuthorPaginated(Long authorId, int page, int size) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            return annonceDAO.findWithFilters(em, Map.of("author.id", authorId), null, null, ORDER_BY, JOINS, page, size);
+            return annonceRepository.findWithFilters(em, Map.of("author.id", authorId), null, null, ORDER_BY, JOINS, page, size);
         } finally {
             em.close();
         }
@@ -239,7 +239,7 @@ public class AnnonceService {
     public List<Annonce> searchByKeywordPaginated(String keyword, int page, int size) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            return annonceDAO.findWithFilters(em, Map.of("status", AnnonceStatus.PUBLISHED), keyword, KEYWORD_FIELDS, ORDER_BY, JOINS, page, size);
+            return annonceRepository.findWithFilters(em, Map.of("status", AnnonceStatus.PUBLISHED), keyword, KEYWORD_FIELDS, ORDER_BY, JOINS, page, size);
         } finally {
             em.close();
         }
@@ -251,7 +251,7 @@ public class AnnonceService {
             Map<String, Object> filters = new HashMap<>();
             filters.put("category.id", categoryId);
             filters.put("status", status);
-            return annonceDAO.findWithFilters(em, filters, null, null, ORDER_BY, JOINS, page, size);
+            return annonceRepository.findWithFilters(em, filters, null, null, ORDER_BY, JOINS, page, size);
         } finally {
             em.close();
         }
@@ -264,7 +264,7 @@ public class AnnonceService {
     public long count() {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            return annonceDAO.count(em);
+            return annonceRepository.count(em);
         } finally {
             em.close();
         }
@@ -273,7 +273,7 @@ public class AnnonceService {
     public long countPublished() {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            return annonceDAO.countWithFilters(em, Map.of("status", AnnonceStatus.PUBLISHED));
+            return annonceRepository.countWithFilters(em, Map.of("status", AnnonceStatus.PUBLISHED));
         } finally {
             em.close();
         }
@@ -282,7 +282,7 @@ public class AnnonceService {
     public long countByKeyword(String keyword) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            return annonceDAO.countWithFilters(em, Map.of("status", AnnonceStatus.PUBLISHED), keyword, KEYWORD_FIELDS);
+            return annonceRepository.countWithFilters(em, Map.of("status", AnnonceStatus.PUBLISHED), keyword, KEYWORD_FIELDS);
         } finally {
             em.close();
         }
@@ -291,7 +291,7 @@ public class AnnonceService {
     public long countByAuthor(Long authorId) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            return annonceDAO.countWithFilters(em, Map.of("author.id", authorId));
+            return annonceRepository.countWithFilters(em, Map.of("author.id", authorId));
         } finally {
             em.close();
         }
@@ -303,7 +303,7 @@ public class AnnonceService {
             Map<String, Object> filters = new HashMap<>();
             filters.put("category.id", categoryId);
             filters.put("status", AnnonceStatus.PUBLISHED);
-            return annonceDAO.countWithFilters(em, filters);
+            return annonceRepository.countWithFilters(em, filters);
         } finally {
             em.close();
         }

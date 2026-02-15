@@ -2,7 +2,7 @@ package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.integration;
 
 import org.junit.jupiter.api.*;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.Annonce;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.dao.AnnonceDAO;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.repository.AnnonceRepository;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.AnnonceStatus;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.Category;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class LazyLoadingTest {
 
     private static EntityManagerFactory emf;
-    private AnnonceDAO annonceDAO;
+    private AnnonceRepository annonceRepository;
     private User testUser;
     private Category testCategory;
 
@@ -44,7 +44,7 @@ class LazyLoadingTest {
     @BeforeEach
     void setUp() {
         EntityManager em = emf.createEntityManager();
-        annonceDAO = new AnnonceDAO();
+        annonceRepository = new AnnonceRepository();
 
         testUser = new User("lazyuser", "lazy@test.com", "password123");
         testCategory = new Category("TestCategory");
@@ -83,7 +83,7 @@ class LazyLoadingTest {
     void withoutJoinFetch_shouldFailOnLazyAccess() {
         // Charger l'annonce SANS join fetch dans un EM qu'on ferme ensuite
         EntityManager em = emf.createEntityManager();
-        List<Annonce> annonces = annonceDAO.findWithFilters(em,
+        List<Annonce> annonces = annonceRepository.findWithFilters(em,
                 Map.of("status", AnnonceStatus.PUBLISHED),
                 null, null, "title ASC", null);
         assertFalse(annonces.isEmpty());
@@ -102,7 +102,7 @@ class LazyLoadingTest {
     void withJoinFetch_shouldSucceedOnLazyAccess() {
         // Charger l'annonce AVEC join fetch
         EntityManager em = emf.createEntityManager();
-        List<Annonce> annonces = annonceDAO.findWithFilters(em,
+        List<Annonce> annonces = annonceRepository.findWithFilters(em,
                 Map.of("status", AnnonceStatus.PUBLISHED),
                 null, null, "title ASC",
                 "LEFT JOIN FETCH e.author LEFT JOIN FETCH e.category");
@@ -127,7 +127,7 @@ class LazyLoadingTest {
         EntityManager em = emf.createEntityManager();
 
         // Charger 5 annonces SANS join fetch (1 requête)
-        List<Annonce> annonces = annonceDAO.findWithFilters(em,
+        List<Annonce> annonces = annonceRepository.findWithFilters(em,
                 Map.of("status", AnnonceStatus.PUBLISHED),
                 null, null, "title ASC", null);
         assertEquals(5, annonces.size());
@@ -147,7 +147,7 @@ class LazyLoadingTest {
         EntityManager em = emf.createEntityManager();
 
         // Charger 5 annonces AVEC join fetch (1 seule requête avec JOIN)
-        List<Annonce> annonces = annonceDAO.findWithFilters(em,
+        List<Annonce> annonces = annonceRepository.findWithFilters(em,
                 Map.of("status", AnnonceStatus.PUBLISHED),
                 null, null, "title ASC",
                 "LEFT JOIN FETCH e.author LEFT JOIN FETCH e.category");
@@ -170,13 +170,13 @@ class LazyLoadingTest {
     @DisplayName("findById() simple ne charge pas les relations (LAZY)")
     void findById_doesNotLoadRelations() {
         EntityManager em = emf.createEntityManager();
-        List<Annonce> all = annonceDAO.findWithFilters(em, null, null, null, null, null);
+        List<Annonce> all = annonceRepository.findWithFilters(em, null, null, null, null, null);
         Long annonceId = all.get(0).getId();
         em.close();
 
         // findById retourne l'entité mais les relations sont des proxys
         EntityManager em2 = emf.createEntityManager();
-        Optional<Annonce> found = annonceDAO.findById(em2, annonceId);
+        Optional<Annonce> found = annonceRepository.findById(em2, annonceId);
         assertTrue(found.isPresent());
         em2.close();
 
@@ -188,12 +188,12 @@ class LazyLoadingTest {
     @DisplayName("findOneWithFilters() + JOIN FETCH charge les relations")
     void findOneWithFilters_withJoin_loadsRelations() {
         EntityManager em = emf.createEntityManager();
-        List<Annonce> all = annonceDAO.findWithFilters(em, null, null, null, null, null);
+        List<Annonce> all = annonceRepository.findWithFilters(em, null, null, null, null, null);
         Long annonceId = all.get(0).getId();
         em.close();
 
         EntityManager em2 = emf.createEntityManager();
-        Optional<Annonce> found = annonceDAO.findOneWithFilters(em2,
+        Optional<Annonce> found = annonceRepository.findOneWithFilters(em2,
                 Map.of("id", annonceId),
                 "LEFT JOIN FETCH e.author LEFT JOIN FETCH e.category");
         assertTrue(found.isPresent());
