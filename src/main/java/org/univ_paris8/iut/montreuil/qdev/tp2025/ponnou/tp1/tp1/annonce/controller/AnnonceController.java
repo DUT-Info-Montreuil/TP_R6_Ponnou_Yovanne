@@ -7,12 +7,14 @@ import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.mappers.
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.dto.AnnoncePatchDTO;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.Annonce;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.service.AnnonceService;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.filter.AuthTokenFilter;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.model.Secured;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.dto.PaginatedResponse;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ResourceNotFoundException;
 
 import javax.validation.Valid;
 import javax.ws.rs.*;
+import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -46,13 +48,16 @@ public class AnnonceController {
 
     @POST
     @Secured
-    public Response create(@Valid AnnonceCreateDTO dto, @Context UriInfo uriInfo) {
+    public Response create(@Valid AnnonceCreateDTO dto,
+                           @Context ContainerRequestContext requestContext,
+                           @Context UriInfo uriInfo) {
+        Long userId = (Long) requestContext.getProperty(AuthTokenFilter.USER_ID_PROPERTY);
         Annonce created = annonceService.create(
                 dto.getTitle(),
                 dto.getDescription(),
                 dto.getAdress(),
                 dto.getMail(),
-                dto.getAuthorId(),
+                userId,
                 dto.getCategoryId()
         );
         AnnonceDTO responseDTO = AnnonceMapper.toDTO(created);
@@ -63,9 +68,12 @@ public class AnnonceController {
     @PUT
     @Path("/{id}")
     @Secured
-    public Response update(@PathParam("id") Long id, @Valid AnnonceUpdateDTO dto) {
+    public Response update(@PathParam("id") Long id, @Valid AnnonceUpdateDTO dto,
+                           @Context ContainerRequestContext requestContext) {
+        Long userId = (Long) requestContext.getProperty(AuthTokenFilter.USER_ID_PROPERTY);
         Annonce updated = annonceService.update(
                 id,
+                userId,
                 dto.getTitle(),
                 dto.getDescription(),
                 dto.getAdress(),
@@ -78,17 +86,22 @@ public class AnnonceController {
     @DELETE
     @Path("/{id}")
     @Secured
-    public Response delete(@PathParam("id") Long id) {
-        annonceService.delete(id);
+    public Response delete(@PathParam("id") Long id,
+                           @Context ContainerRequestContext requestContext) {
+        Long userId = (Long) requestContext.getProperty(AuthTokenFilter.USER_ID_PROPERTY);
+        annonceService.delete(id, userId);
         return Response.noContent().build();
     }
 
     @PATCH
     @Path("/{id}")
     @Secured
-    public Response patch(@PathParam("id") Long id, @Valid AnnoncePatchDTO dto) {
+    public Response patch(@PathParam("id") Long id, @Valid AnnoncePatchDTO dto,
+                          @Context ContainerRequestContext requestContext) {
+        Long userId = (Long) requestContext.getProperty(AuthTokenFilter.USER_ID_PROPERTY);
         Annonce patched = annonceService.patch(
                 id,
+                userId,
                 dto.getTitle(),
                 dto.getDescription(),
                 dto.getAdress(),
@@ -96,5 +109,25 @@ public class AnnonceController {
                 dto.getCategoryId()
         );
         return Response.ok(AnnonceMapper.toDTO(patched)).build();
+    }
+
+    @PUT
+    @Path("/{id}/publish")
+    @Secured
+    public Response publish(@PathParam("id") Long id,
+                            @Context ContainerRequestContext requestContext) {
+        Long userId = (Long) requestContext.getProperty(AuthTokenFilter.USER_ID_PROPERTY);
+        Annonce published = annonceService.publish(id, userId);
+        return Response.ok(AnnonceMapper.toDTO(published)).build();
+    }
+
+    @PUT
+    @Path("/{id}/archive")
+    @Secured
+    public Response archive(@PathParam("id") Long id,
+                            @Context ContainerRequestContext requestContext) {
+        Long userId = (Long) requestContext.getProperty(AuthTokenFilter.USER_ID_PROPERTY);
+        Annonce archived = annonceService.archive(id, userId);
+        return Response.ok(AnnonceMapper.toDTO(archived)).build();
     }
 }

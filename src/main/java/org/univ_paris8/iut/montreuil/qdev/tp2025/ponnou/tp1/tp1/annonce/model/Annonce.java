@@ -53,6 +53,10 @@ public class Annonce {
     @Column(nullable = false, length = 20)
     private AnnonceStatus status = AnnonceStatus.DRAFT;
 
+    @Version
+    @Column(name = "version")
+    private Long version;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id", nullable = false)
     private User author;

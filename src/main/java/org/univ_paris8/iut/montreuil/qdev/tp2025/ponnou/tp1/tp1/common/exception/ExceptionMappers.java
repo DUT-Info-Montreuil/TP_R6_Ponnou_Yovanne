@@ -1,5 +1,6 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception;
 
+import javax.persistence.OptimisticLockException;
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 import javax.ws.rs.core.MediaType;
@@ -55,6 +56,28 @@ public class ExceptionMappers {
             return Response.status(Response.Status.CONFLICT)
                     .type(MediaType.APPLICATION_JSON)
                     .entity(new ErrorResponse("CONFLICT", e.getMessage()))
+                    .build();
+        }
+    }
+
+    @Provider
+    public static class ForbiddenOperationExceptionMapper implements ExceptionMapper<ForbiddenOperationException> {
+        @Override
+        public Response toResponse(ForbiddenOperationException e) {
+            return Response.status(Response.Status.FORBIDDEN)
+                    .type(MediaType.APPLICATION_JSON)
+                    .entity(new ErrorResponse("FORBIDDEN", e.getMessage()))
+                    .build();
+        }
+    }
+
+    @Provider
+    public static class OptimisticLockExceptionMapper implements ExceptionMapper<OptimisticLockException> {
+        @Override
+        public Response toResponse(OptimisticLockException e) {
+            return Response.status(Response.Status.CONFLICT)
+                    .type(MediaType.APPLICATION_JSON)
+                    .entity(new ErrorResponse("CONFLICT", "La ressource a été modifiée par un autre utilisateur. Veuillez réessayer."))
                     .build();
         }
     }

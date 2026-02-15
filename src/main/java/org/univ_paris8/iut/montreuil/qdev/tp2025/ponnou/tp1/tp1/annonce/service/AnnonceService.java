@@ -5,6 +5,7 @@ import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.An
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.dao.AnnonceDAO;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.Category;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.dao.CategoryDAO;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ForbiddenOperationException;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ResourceNotFoundException;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.dao.UserDAO;
@@ -28,13 +29,13 @@ public class AnnonceService {
     private final CategoryDAO categoryDAO = new CategoryDAO();
 
     public Annonce create(String title, String description, String adress, String mail,
-                          Long authorId, Long categoryId) {
+                          Long authenticatedUserId, Long categoryId) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
 
-            User author = userDAO.findById(em, authorId)
+            User author = userDAO.findById(em, authenticatedUserId)
                     .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé"));
 
             Category category = categoryDAO.findById(em, categoryId)
@@ -56,8 +57,8 @@ public class AnnonceService {
         }
     }
 
-    public Annonce update(Long id, String title, String description, String adress, String mail,
-                          Long categoryId) {
+    public Annonce update(Long id, Long authenticatedUserId, String title, String description,
+                          String adress, String mail, Long categoryId) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
@@ -65,6 +66,9 @@ public class AnnonceService {
 
             Annonce annonce = annonceDAO.findOneWithFilters(em, Map.of("id", id), JOINS)
                     .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvée"));
+
+            checkOwnership(annonce, authenticatedUserId);
+            checkNotPublished(annonce);
 
             Category category = categoryDAO.findById(em, categoryId)
                     .orElseThrow(() -> new ResourceNotFoundException("Catégorie non trouvée"));
@@ -86,7 +90,7 @@ public class AnnonceService {
         }
     }
 
-    public Annonce publish(Long id) {
+    public Annonce publish(Long id, Long authenticatedUserId) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
@@ -94,6 +98,8 @@ public class AnnonceService {
 
             Annonce annonce = annonceDAO.findOneWithFilters(em, Map.of("id", id), JOINS)
                     .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvée"));
+
+            checkOwnership(annonce, authenticatedUserId);
 
             if (annonce.getStatus() == AnnonceStatus.ARCHIVED) {
                 throw new IllegalStateException("Impossible de publier une annonce archivée");
@@ -111,7 +117,7 @@ public class AnnonceService {
         }
     }
 
-    public Annonce archive(Long id) {
+    public Annonce archive(Long id, Long authenticatedUserId) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
@@ -119,6 +125,8 @@ public class AnnonceService {
 
             Annonce annonce = annonceDAO.findOneWithFilters(em, Map.of("id", id), JOINS)
                     .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvée"));
+
+            checkOwnership(annonce, authenticatedUserId);
 
             annonce.setStatus(AnnonceStatus.ARCHIVED);
             Annonce updated = annonceDAO.update(em, annonce);
@@ -132,8 +140,8 @@ public class AnnonceService {
         }
     }
 
-    public Annonce patch(Long id, String title, String description, String adress, String mail,
-                         Long categoryId) {
+    public Annonce patch(Long id, Long authenticatedUserId, String title, String description,
+                         String adress, String mail, Long categoryId) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
@@ -141,6 +149,9 @@ public class AnnonceService {
 
             Annonce annonce = annonceDAO.findOneWithFilters(em, Map.of("id", id), JOINS)
                     .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvée"));
+
+            checkOwnership(annonce, authenticatedUserId);
+            checkNotPublished(annonce);
 
             if (title != null) annonce.setTitle(title);
             if (description != null) annonce.setDescription(description);
@@ -163,14 +174,23 @@ public class AnnonceService {
         }
     }
 
-    public void delete(Long id) {
+    public void delete(Long id, Long authenticatedUserId) {
         EntityManager em = EntityManagerUtil.getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
-            if (!annonceDAO.deleteById(em, id)) {
-                throw new ResourceNotFoundException("Annonce non trouvée");
+
+            Annonce annonce = annonceDAO.findOneWithFilters(em, Map.of("id", id), JOINS)
+                    .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvée"));
+
+            checkOwnership(annonce, authenticatedUserId);
+
+            if (annonce.getStatus() != AnnonceStatus.ARCHIVED) {
+                throw new IllegalStateException(
+                        "L'annonce doit être archivée avant d'être supprimée. Statut actuel : " + annonce.getStatus());
             }
+
+            annonceDAO.delete(em, annonce);
             tx.commit();
         } catch (Exception e) {
             if (tx.isActive()) tx.rollback();
@@ -286,6 +306,18 @@ public class AnnonceService {
             return annonceDAO.countWithFilters(em, filters);
         } finally {
             em.close();
+        }
+    }
+
+    private void checkOwnership(Annonce annonce, Long authenticatedUserId) {
+        if (!annonce.getAuthor().getId().equals(authenticatedUserId)) {
+            throw new ForbiddenOperationException("Seul l'auteur peut modifier ou supprimer cette annonce");
+        }
+    }
+
+    private void checkNotPublished(Annonce annonce) {
+        if (annonce.getStatus() == AnnonceStatus.PUBLISHED) {
+            throw new IllegalStateException("Impossible de modifier une annonce publiée");
         }
     }
 }

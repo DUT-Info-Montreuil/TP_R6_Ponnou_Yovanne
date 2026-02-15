@@ -24,9 +24,6 @@ public class AnnonceCreateDTO {
     @Size(max = 64, message = "mail must not exceed 64 characters")
     private String mail;
 
-    @NotNull(message = "authorId is required")
-    private Long authorId;
-
     @NotNull(message = "categoryId is required")
     private Long categoryId;
 
@@ -44,9 +41,6 @@ public class AnnonceCreateDTO {
 
     public String getMail() { return mail; }
     public void setMail(String mail) { this.mail = mail; }
-
-    public Long getAuthorId() { return authorId; }
-    public void setAuthorId(Long authorId) { this.authorId = authorId; }
 
     public Long getCategoryId() { return categoryId; }
     public void setCategoryId(Long categoryId) { this.categoryId = categoryId; }
