@@ -86,6 +86,7 @@ public class ExceptionMappers {
     public static class GenericExceptionMapper implements ExceptionMapper<Exception> {
         @Override
         public Response toResponse(Exception e) {
+            e.printStackTrace();
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .type(MediaType.APPLICATION_JSON)
                     .entity(new ErrorResponse("INTERNAL_ERROR", "Erreur interne du serveur"))
