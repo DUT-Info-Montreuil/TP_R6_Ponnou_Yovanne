@@ -13,8 +13,18 @@ import java.util.Optional;
 
 public class CategoryService {
 
-    private final CategoryRepository categoryRepository = new CategoryRepository();
-    private final AnnonceRepository annonceRepository = new AnnonceRepository();
+    private final CategoryRepository categoryRepository;
+    private final AnnonceRepository annonceRepository;
+
+    public CategoryService() {
+        this.categoryRepository = new CategoryRepository();
+        this.annonceRepository = new AnnonceRepository();
+    }
+
+    public CategoryService(CategoryRepository categoryRepository, AnnonceRepository annonceRepository) {
+        this.categoryRepository = categoryRepository;
+        this.annonceRepository = annonceRepository;
+    }
 
     public Category create(String label) {
         EntityManager em = EntityManagerUtil.getEntityManager();

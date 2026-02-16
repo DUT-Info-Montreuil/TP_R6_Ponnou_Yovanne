@@ -24,9 +24,22 @@ public class AnnonceService {
     private static final String ORDER_BY = "date DESC";
     private static final String[] KEYWORD_FIELDS = {"title", "description"};
 
-    private final AnnonceRepository annonceRepository = new AnnonceRepository();
-    private final UserRepository userRepository = new UserRepository();
-    private final CategoryRepository categoryRepository = new CategoryRepository();
+    private final AnnonceRepository annonceRepository;
+    private final UserRepository userRepository;
+    private final CategoryRepository categoryRepository;
+
+    public AnnonceService() {
+        this.annonceRepository = new AnnonceRepository();
+        this.userRepository = new UserRepository();
+        this.categoryRepository = new CategoryRepository();
+    }
+
+    public AnnonceService(AnnonceRepository annonceRepository, UserRepository userRepository,
+                          CategoryRepository categoryRepository) {
+        this.annonceRepository = annonceRepository;
+        this.userRepository = userRepository;
+        this.categoryRepository = categoryRepository;
+    }
 
     public Annonce create(String title, String description, String adress, String mail,
                           Long authenticatedUserId, Long categoryId) {
