@@ -1,4 +1,4 @@
-package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.repository;
+package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.users.repository;
 
 import org.junit.jupiter.api.*;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;

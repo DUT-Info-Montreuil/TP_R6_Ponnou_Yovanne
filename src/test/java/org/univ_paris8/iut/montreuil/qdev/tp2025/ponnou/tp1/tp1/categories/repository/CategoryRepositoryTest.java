@@ -1,4 +1,4 @@
-package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.repository;
+package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.categories.repository;
 
 import org.junit.jupiter.api.*;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.Category;

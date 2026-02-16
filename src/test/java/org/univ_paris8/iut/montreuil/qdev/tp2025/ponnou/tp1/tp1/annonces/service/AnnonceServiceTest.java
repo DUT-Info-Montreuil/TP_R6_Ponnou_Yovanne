@@ -1,4 +1,4 @@
-package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.service;
+package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonces.service;
 
 import org.junit.jupiter.api.*;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.Annonce;
