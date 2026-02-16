@@ -67,6 +67,10 @@ class AnnonceControllerRestTest {
 
         };
         jerseyTest.setUp();
+        Response warmup = jerseyTest.target("/annonces")
+                .request(MediaType.APPLICATION_JSON)
+                .get();
+        warmup.close();
     }
 
     @AfterAll
