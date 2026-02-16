@@ -1,5 +1,11 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.dto.CategoryDTO;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.dto.CategoryCreateDTO;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.dto.CategoryUpdateDTO;
@@ -23,11 +29,17 @@ import java.util.List;
 @Path("/categories")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@Tag(name = "Categories", description = "Gestion des categories")
 public class CategoryController {
 
     private final CategoryService categoryService = new CategoryService();
 
     @GET
+    @Operation(summary = "Lister les categories", description = "Retourne la liste paginee des categories.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Liste des categories retournee", content = @Content()),
+            @ApiResponse(responseCode = "500", description = "Erreur interne", content = @Content())
+    })
     public Response getAll(@QueryParam("page") @DefaultValue("0") int page,
                            @QueryParam("size") @DefaultValue("10") int size) {
         List<Category> categories = categoryService.findAllPaginated(page, size);
@@ -38,6 +50,12 @@ public class CategoryController {
 
     @GET
     @Path("/{id}")
+    @Operation(summary = "Recuperer une categorie", description = "Retourne le detail d'une categorie par son id.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Categorie retournee", content = @Content()),
+            @ApiResponse(responseCode = "404", description = "Categorie non trouvee", content = @Content()),
+            @ApiResponse(responseCode = "500", description = "Erreur interne", content = @Content())
+    })
     public Response getById(@PathParam("id") Long id) {
         Category category = categoryService.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Catégorie non trouvée avec l'id : " + id));
@@ -46,6 +64,15 @@ public class CategoryController {
 
     @POST
     @Secured
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Creer une categorie", description = "Cree une nouvelle categorie.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Categorie creee", content = @Content()),
+            @ApiResponse(responseCode = "400", description = "Requete invalide", content = @Content()),
+            @ApiResponse(responseCode = "401", description = "Non authentifie", content = @Content()),
+            @ApiResponse(responseCode = "409", description = "Conflit metier", content = @Content()),
+            @ApiResponse(responseCode = "500", description = "Erreur interne", content = @Content())
+    })
     public Response create(@Valid CategoryCreateDTO dto, @Context UriInfo uriInfo) {
         Category created = categoryService.create(dto.getLabel());
         CategoryDTO responseDTO = CategoryMapper.toDTO(created);
@@ -56,6 +83,15 @@ public class CategoryController {
     @PUT
     @Path("/{id}")
     @Secured
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Mettre a jour une categorie", description = "Met a jour une categorie existante.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Categorie mise a jour", content = @Content()),
+            @ApiResponse(responseCode = "400", description = "Requete invalide", content = @Content()),
+            @ApiResponse(responseCode = "401", description = "Non authentifie", content = @Content()),
+            @ApiResponse(responseCode = "404", description = "Categorie non trouvee", content = @Content()),
+            @ApiResponse(responseCode = "409", description = "Conflit metier", content = @Content())
+    })
     public Response update(@PathParam("id") Long id, @Valid CategoryUpdateDTO dto) {
         Category updated = categoryService.update(id, dto.getLabel());
         return Response.ok(CategoryMapper.toDTO(updated)).build();
@@ -64,6 +100,14 @@ public class CategoryController {
     @DELETE
     @Path("/{id}")
     @Secured
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Supprimer une categorie", description = "Supprime une categorie si elle n'est pas utilisee.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Categorie supprimee", content = @Content()),
+            @ApiResponse(responseCode = "401", description = "Non authentifie", content = @Content()),
+            @ApiResponse(responseCode = "404", description = "Categorie non trouvee", content = @Content()),
+            @ApiResponse(responseCode = "409", description = "Conflit metier", content = @Content())
+    })
     public Response delete(@PathParam("id") Long id) {
         categoryService.delete(id);
         return Response.noContent().build();
@@ -72,6 +116,15 @@ public class CategoryController {
     @PATCH
     @Path("/{id}")
     @Secured
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Patch partiel d'une categorie", description = "Met a jour partiellement une categorie.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Categorie mise a jour", content = @Content()),
+            @ApiResponse(responseCode = "400", description = "Requete invalide", content = @Content()),
+            @ApiResponse(responseCode = "401", description = "Non authentifie", content = @Content()),
+            @ApiResponse(responseCode = "404", description = "Categorie non trouvee", content = @Content()),
+            @ApiResponse(responseCode = "409", description = "Conflit metier", content = @Content())
+    })
     public Response patch(@PathParam("id") Long id, @Valid CategoryPatchDTO dto) {
         Category patched = categoryService.patch(id, dto.getLabel());
         return Response.ok(CategoryMapper.toDTO(patched)).build();

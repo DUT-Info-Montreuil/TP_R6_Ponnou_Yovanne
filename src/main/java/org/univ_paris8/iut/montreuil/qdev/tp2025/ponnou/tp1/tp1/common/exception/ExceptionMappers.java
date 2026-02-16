@@ -1,5 +1,8 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.persistence.OptimisticLockException;
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
@@ -84,9 +87,11 @@ public class ExceptionMappers {
 
     @Provider
     public static class GenericExceptionMapper implements ExceptionMapper<Exception> {
+        private static final Logger LOGGER = LoggerFactory.getLogger(GenericExceptionMapper.class);
+
         @Override
         public Response toResponse(Exception e) {
-            e.printStackTrace();
+            LOGGER.error("event=unhandled_exception type={} message={}", e.getClass().getSimpleName(), e.getMessage(), e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .type(MediaType.APPLICATION_JSON)
                     .entity(new ErrorResponse("INTERNAL_ERROR", "Erreur interne du serveur"))

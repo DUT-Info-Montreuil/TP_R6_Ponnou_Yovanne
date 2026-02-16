@@ -1,92 +1,125 @@
+# MasterAnnonce - TP Dev Avance #3
+
+Backend Java EE expose en API REST JSON (JAX-RS + JPA/Hibernate), sans Spring.
+
 ## Architecture
 
-Le projet suit une architecture :
+Le projet suit une architecture en couches:
 
+1. `controller` (ressources REST JAX-RS)
+2. `service` (regles metier + transactions)
+3. `repository` (acces donnees JPA)
+4. `model` (entites JPA)
+
+Composants transverses:
+- Validation Bean Validation sur DTO
+- Mapping DTO <-> Entite
+- Gestion centralisee des erreurs REST
+- Authentification stateless par token
+
+## Exercice 10 - Industrialisation
+
+### 1) Lancer separement tests unitaires et tests d'integration
+
+Configuration Maven ajoutee:
+- `maven-surefire-plugin` pour les tests unitaires
+- `maven-failsafe-plugin` pour les tests d'integration
+- Profils Maven `integration-tests` et `integration-only`
+
+Commandes:
+
+```bash
+# Tests unitaires uniquement
+mvn test
+
+# Tests d'integration uniquement
+mvn verify -Pintegration-only
+
+# Build complet (unitaires + integration)
+mvn verify -Pintegration-tests
 ```
-Presentation (Servlets / JSP)
-        |
-   Service (logique métier)
-        |
-   DAO (accès aux données via JPA/Hibernate)
-        |
-   Base de données (PostgreSQL)
+
+Pourquoi separer les executions:
+- Feedback rapide: les tests unitaires tournent vite et sont adaptes au developpement local frequent.
+- Robustesse CI: les tests d'integration sont plus lents et plus fragiles (I/O, base, conteneur HTTP), donc mieux controles dans un stage dedie.
+- Diagnostic plus simple: en cas d'echec, on sait immediatement si le probleme vient du code metier pur (UT) ou de l'integration technique (IT).
+
+### 2) Logging structure
+
+Ajouts:
+- Filtre JAX-RS `RequestResponseLoggingFilter` pour journaliser chaque requete/reponse.
+- Correlation par `X-Request-Id` (genere si absent, renvoye dans la reponse).
+- `logback.xml` pour un format de logs structure en key/value.
+- Remplacement du `printStackTrace` par un logger SLF4J dans le mapper d'exceptions global.
+
+Exemple de ligne de log:
+
+```text
+2026-02-16T23:10:12.200+01:00 level=INFO logger=... request_id=... msg="event=http_request_end request_id=... method=GET path=annonces status=200 duration_ms=14 user_id=anonymous"
 ```
 
-### Couche Model
+### 3) Tests de charge simples
 
-Trois entités JPA avec leurs relations :
-- **User** : compte utilisateur (username, email, password) — relation `@OneToMany` vers Annonce
-- **Annonce** : annonce avec titre, description, adresse, statut (DRAFT / PUBLISHED / ARCHIVED) — relations `@ManyToOne` vers User et Category
-- **Category** : catégorie d'annonce (label unique) — relation `@OneToMany` vers Annonce
+Un script k6 est fourni:
+- `load-tests/annonces-load-test.js`
 
-### Couche DAO
+Il execute une charge de lecture simple sur:
+- `GET /api/annonces`
+- `GET /api/categories`
 
-Un **GenericDAO\<T, ID\>** factorise les opérations CRUD et le filtrage dynamique (construction de requêtes JPQL avec filtres, recherche par mot-clé, pagination, tri et jointures). Les DAOs spécialisés (`UserDAO`, `AnnonceDAO`, `CategoryDAO`) héritent de ce GenericDAO sans code supplémentaire.
+Avec ramp-up progressif et seuils de base:
+- erreurs HTTP < 1%
+- p95 latence < 500 ms
 
-### Couche Service
+Execution:
 
-Chaque service gère les transactions JPA (begin / commit / rollback) et applique les règles métier :
-- **UserService** : création, authentification, unicité username/email, changement de mot de passe
-- **AnnonceService** : CRUD, publication, archivage, recherche par mot-clé/catégorie/auteur avec pagination
-- **CategoryService** : CRUD avec interdiction de supprimer une catégorie contenant des annonces
+```bash
+# URL par defaut: http://localhost:8080/masterannonce/api
+k6 run load-tests/annonces-load-test.js
 
-### Couche Controller
+# URL personnalisee
+k6 run -e BASE_URL=http://localhost:8080/masterannonce/api load-tests/annonces-load-test.js
+```
 
-10 servlets gèrent les différentes pages :
-- **HomeServlet** (`/`, `/home`) : liste des annonces publiées avec pagination, filtre par catégorie et recherche
-- **LoginServlet / LogoutServlet / RegisterServlet** : authentification et inscription
-- **AnnonceCreateServlet / AnnonceEditServlet / AnnonceDetailServlet / AnnonceDeleteServlet** : CRUD annonces
-- **AnnonceStatusServlet** : changement de statut (publier / archiver)
-- **MesAnnoncesServlet** : annonces de l'utilisateur connecté
+### 4) Documentation API (OpenAPI)
 
-### Sécurité
+Ajouts:
+- Dependance `swagger-jaxrs2`
+- Enregistrement OpenAPI dans `RestApplication`
 
-- **AuthFilter** : intercepte les URLs protégées (`/annonces/*`, `/mes-annonces`, `/annonce/*`) et redirige vers le login si l'utilisateur n'est pas authentifié
-- Validation des entrées avec Hibernate Validator (`@NotBlank`, `@Email`, `@Size`)
-- Protection contre l'injection SQL dans le GenericDAO (validation des noms de champs par regex)
+Documentation exposee en runtime:
+- `http://localhost:8080/masterannonce/api/openapi.json`
+- `http://localhost:8080/masterannonce/api/openapi.yaml`
 
-### Tests
+UI Swagger (navigateur):
+- `http://localhost:8080/masterannonce/swagger-ui/`
 
-- **Tests unitaires** : JUnit 5 + Mockito pour les services et controllers (mock de l'EntityManager)
-- **Tests d'intégration** : base H2 en mémoire avec un persistence unit dédié
-- **Tests de workflow** : création → publication → archivage
+## Problemes rencontres (Exercice 10)
 
-## Problèmes rencontrés
+1. Separation UT/IT sans renommer tout le parc de tests
+Le projet contenait deja beaucoup de classes nommees `*Test`, y compris des tests REST et repository (integration). Renommer tout etait couteux et risquait d'introduire de la dette. La solution retenue a ete un filtrage par pattern dans Surefire/Failsafe + profils Maven, ce qui permet une migration progressive sans casser les tests existants.
 
-1. **Gestion manuelle de l'EntityManager** : Chaque service doit gérer lui-même le cycle de vie de l'EntityManager (ouverture, transaction, fermeture). Cela entraînait des fuites de connexions et des `LazyInitializationException` quand les entités étaient accédées en dehors d'une session active.
+2. Logging non uniforme et peu exploitable
+Le code melangeait des sorties directes (`printStackTrace`) et des logs non structures, ce qui complique l'analyse en environnement reel. La solution a ete d'imposer SLF4J + Logback, un format structure key/value, et un `request_id` de correlation pour suivre un appel de bout en bout.
 
-2. **Duplication de code dans les DAOs** : chaque DAO (User, Annonce, Category) répétait les mêmes opérations CRUD, rendant le code difficile à maintenir et source d'incohérences.
+3. Documentation API absente ou difficile a maintenir
+Sans OpenAPI, l'exploration des endpoints dependait du code source et des tests. La solution a ete d'ajouter Swagger Core sur JAX-RS pour exposer automatiquement une spec OpenAPI versionnee.
 
-3. **Filtrage dynamique des requêtes** : construire des requêtes JPQL avec des filtres optionnels (mot-clé, catégorie, statut, pagination) de manière sécurisée et flexible était complexe à implémenter proprement.
+4. Charge testee manuellement et de facon non reproductible
+Les verifications de performance etaient manuelles et non comparables dans le temps. La solution a ete d'ajouter un script k6 versionne dans le repo, avec scenario et seuils minimaux reproductibles.
 
-4. **Sécurisation des routes** : protéger certaines URLs tout en laissant les pages publiques accessibles (accueil, login, inscription) nécessitait une gestion fine des filtres de servlets.
+## Fichiers modifies pour l'exercice 10
 
-5. **LazyInitializationException** : les relations `@ManyToOne(fetch = FetchType.LAZY)` sur `Annonce.author` et `Annonce.category` créent des objets proxy. Dès qu'on ferme l'EntityManager et qu'on tente d'accéder à `annonce.getAuthor().getUsername()`, Hibernate lève une `LazyInitializationException` car le proxy ne peut plus charger les données.
+- `pom.xml`
+- `src/main/java/org/univ_paris8/iut/montreuil/qdev/tp2025/ponnou/tp1/tp1/common/config/RestApplication.java`
+- `src/main/java/org/univ_paris8/iut/montreuil/qdev/tp2025/ponnou/tp1/tp1/common/logging/RequestResponseLoggingFilter.java`
+- `src/main/java/org/univ_paris8/iut/montreuil/qdev/tp2025/ponnou/tp1/tp1/common/exception/ExceptionMappers.java`
+- `src/main/resources/logback.xml`
+- `load-tests/annonces-load-test.js`
 
-6. **Problème N+1 requêtes** : en chargeant une liste de N annonces sans précaution, chaque accès à `annonce.getAuthor()` déclenchait une requête SQL supplémentaire. Pour 5 annonces, cela générait 1 + 5 = 6 requêtes au lieu d'une seule.
+## Prerequis
 
-7. **`persist()` vs `merge()` — entité détachée** : appeler `em.persist()` sur une entité déjà détachée (qui a un ID existant) lève une `PersistenceException`. Inversement, appeler `em.merge()` sur une entité nouvelle sans `@GeneratedValue` correctement configuré peut créer des doublons au lieu de mettre à jour.
-
-8. **`em.remove()` sur entité détachée** : tenter de supprimer une entité qui n'est pas gérée par le contexte de persistence courant provoque une `IllegalArgumentException`. Il faut d'abord rattacher l'entité avec `merge()` avant de pouvoir la supprimer.
-
-9. **Cascade et orphanRemoval** : la relation `User.annonces` avec `cascade = CascadeType.ALL` et `orphanRemoval = true` signifie que la suppression d'un User supprime automatiquement toutes ses annonces. Sans cette configuration, la suppression échouait avec une violation de contrainte de clé étrangère. Mais mal configurée, elle peut supprimer des données involontairement.
-
-## Solutions apportées
-
-1. **Pattern utilitaire EntityManagerUtil** : centralisation de la création de l'EntityManagerFactory dans un singleton, avec initialisation via `AppContextListener` au démarrage de l'application et fermeture propre à l'arrêt. Chaque service ouvre et ferme son EntityManager dans un bloc `try-finally` pour éviter les fuites.
-
-2. **GenericDAO générique** : mise en place d'un DAO générique paramétré (`GenericDAO<T, ID>`) qui factorise toutes les opérations CRUD. Les DAOs spécialisés héritent sans ajouter de code, éliminant la duplication.
-
-3. **Construction dynamique de JPQL** : le GenericDAO construit les requêtes dynamiquement en ajoutant les clauses `WHERE`, `JOIN`, `ORDER BY` et `LIKE` selon les filtres passés en paramètre. Les noms de champs sont validés par regex pour prévenir les injections SQL.
-
-4. **AuthFilter avec redirection intelligente** : le filtre sauvegarde l'URL demandée avant de rediriger vers le login, puis redirige l'utilisateur vers sa destination initiale après authentification. Les pages publiques sont explicitement exclues du filtrage.
-
-5. **JOIN FETCH pour le Lazy Loading** : toutes les requêtes du `AnnonceService` utilisent `LEFT JOIN FETCH e.author LEFT JOIN FETCH e.category` pour charger les relations en une seule requête SQL. Cela permet d'accéder aux données de l'auteur et de la catégorie même après fermeture de l'EntityManager, et élimine le problème N+1.
-
-6. **Résolution du N+1** : le `DISTINCT` dans le `SELECT` du GenericDAO (ajouté automatiquement quand un JOIN FETCH est présent) évite les doublons causés par les jointures. Combinée au JOIN FETCH, une seule requête SQL charge les annonces avec leurs relations.
-
-7. **Séparation `save()` / `update()` dans le GenericDAO** : `save()` utilise `em.persist()` pour les nouvelles entités, `update()` utilise `em.merge()` pour les entités existantes.
-
-8. **Vérification `em.contains()` avant `remove()`** : dans la méthode `delete()` du GenericDAO, si l'entité n'est pas dans le contexte de persistence courant, elle est d'abord rattachée via `merge()` avant d'être supprimée, évitant l'`IllegalArgumentException`.
-
-9. **Configuration fine des cascades** : `CascadeType.ALL` + `orphanRemoval = true` sur `User.annonces` pour la suppression en cascade. La relation `Category.annonces` n'a pas de cascade, et le `CategoryService` vérifie qu'aucune annonce n'est liée avant de permettre la suppression d'une catégorie.
+- JDK 11
+- Maven 3.9+
+- PostgreSQL (runtime applicatif)
+- k6 (pour les tests de charge)

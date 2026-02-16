@@ -13,6 +13,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>11</maven.compiler.release>
         <junit.version>5.10.0</junit.version>
+        <skipUTs>false</skipUTs>
+        <skipITs>true</skipITs>
     </properties>
 
     <dependencies>
@@ -144,6 +146,21 @@
             <version>1.18.36</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>2.0.13</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.5.8</version>
+        </dependency>
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-jaxrs2</artifactId>
+            <version>2.2.22</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -176,7 +193,37 @@
                 <version>3.2.5</version>
                 <configuration>
                     <argLine>--add-opens java.base/java.net=ALL-UNNAMED</argLine>
+                    <skipTests>${skipUTs}</skipTests>
+                    <excludes>
+                        <exclude>**/*RestTest.java</exclude>
+                        <exclude>**/*RepositoryTest.java</exclude>
+                        <exclude>**/*IntegrationTest.java</exclude>
+                        <exclude>**/*LazyLoadingTest.java</exclude>
+                    </excludes>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.2.5</version>
+                <configuration>
+                    <argLine>--add-opens java.base/java.net=ALL-UNNAMED</argLine>
+                    <skipITs>${skipITs}</skipITs>
+                    <includes>
+                        <include>**/*RestTest.java</include>
+                        <include>**/*RepositoryTest.java</include>
+                        <include>**/*IntegrationTest.java</include>
+                        <include>**/*LazyLoadingTest.java</include>
+                    </includes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <!-- Plugin Tomcat 9 pour lancer l'application -->
             <plugin>
@@ -197,4 +244,20 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>integration-tests</id>
+            <properties>
+                <skipITs>false</skipITs>
+            </properties>
+        </profile>
+        <profile>
+            <id>integration-only</id>
+            <properties>
+                <skipUTs>true</skipUTs>
+                <skipITs>false</skipITs>
+            </properties>
+        </profile>
+    </profiles>
 </project>

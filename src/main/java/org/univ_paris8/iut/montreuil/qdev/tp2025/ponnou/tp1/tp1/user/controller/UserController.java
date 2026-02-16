@@ -1,5 +1,11 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.dto.UserDTO;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.dto.UserCreateDTO;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.dto.UserUpdateDTO;
@@ -23,11 +29,17 @@ import java.util.List;
 @Path("/users")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@Tag(name = "Users", description = "Gestion des utilisateurs")
 public class UserController {
 
     private final UserService userService = new UserService();
 
     @GET
+    @Operation(summary = "Lister les utilisateurs", description = "Retourne la liste paginee des utilisateurs.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Liste des utilisateurs retournee", content = @Content()),
+            @ApiResponse(responseCode = "500", description = "Erreur interne", content = @Content())
+    })
     public Response getAll(@QueryParam("page") @DefaultValue("0") int page,
                            @QueryParam("size") @DefaultValue("10") int size) {
         List<User> users = userService.findAllPaginated(page, size);
@@ -38,6 +50,12 @@ public class UserController {
 
     @GET
     @Path("/{id}")
+    @Operation(summary = "Recuperer un utilisateur", description = "Retourne le detail d'un utilisateur par son id.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Utilisateur retourne", content = @Content()),
+            @ApiResponse(responseCode = "404", description = "Utilisateur non trouve", content = @Content()),
+            @ApiResponse(responseCode = "500", description = "Erreur interne", content = @Content())
+    })
     public Response getById(@PathParam("id") Long id) {
         User user = userService.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé avec l'id : " + id));
@@ -45,6 +63,13 @@ public class UserController {
     }
 
     @POST
+    @Operation(summary = "Creer un utilisateur", description = "Cree un nouveau compte utilisateur.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Utilisateur cree", content = @Content()),
+            @ApiResponse(responseCode = "400", description = "Requete invalide", content = @Content()),
+            @ApiResponse(responseCode = "409", description = "Conflit metier", content = @Content()),
+            @ApiResponse(responseCode = "500", description = "Erreur interne", content = @Content())
+    })
     public Response create(@Valid UserCreateDTO dto, @Context UriInfo uriInfo) {
         User created = userService.create(
                 dto.getUsername(),
@@ -59,6 +84,15 @@ public class UserController {
     @PUT
     @Path("/{id}")
     @Secured
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Mettre a jour un utilisateur", description = "Met a jour un utilisateur existant.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Utilisateur mis a jour", content = @Content()),
+            @ApiResponse(responseCode = "400", description = "Requete invalide", content = @Content()),
+            @ApiResponse(responseCode = "401", description = "Non authentifie", content = @Content()),
+            @ApiResponse(responseCode = "404", description = "Utilisateur non trouve", content = @Content()),
+            @ApiResponse(responseCode = "409", description = "Conflit metier", content = @Content())
+    })
     public Response update(@PathParam("id") Long id, @Valid UserUpdateDTO dto) {
         User updated = userService.update(
                 id,
@@ -71,6 +105,14 @@ public class UserController {
     @DELETE
     @Path("/{id}")
     @Secured
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Supprimer un utilisateur", description = "Supprime un utilisateur.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Utilisateur supprime", content = @Content()),
+            @ApiResponse(responseCode = "401", description = "Non authentifie", content = @Content()),
+            @ApiResponse(responseCode = "404", description = "Utilisateur non trouve", content = @Content()),
+            @ApiResponse(responseCode = "409", description = "Conflit metier", content = @Content())
+    })
     public Response delete(@PathParam("id") Long id) {
         userService.delete(id);
         return Response.noContent().build();
@@ -79,6 +121,15 @@ public class UserController {
     @PATCH
     @Path("/{id}")
     @Secured
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Patch partiel d'un utilisateur", description = "Met a jour partiellement un utilisateur.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Utilisateur mis a jour", content = @Content()),
+            @ApiResponse(responseCode = "400", description = "Requete invalide", content = @Content()),
+            @ApiResponse(responseCode = "401", description = "Non authentifie", content = @Content()),
+            @ApiResponse(responseCode = "404", description = "Utilisateur non trouve", content = @Content()),
+            @ApiResponse(responseCode = "409", description = "Conflit metier", content = @Content())
+    })
     public Response patch(@PathParam("id") Long id, @Valid UserPatchDTO dto) {
         User patched = userService.patch(
                 id,

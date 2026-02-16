@@ -50,6 +50,7 @@ class AnnonceServiceTest {
         mockedUtil = mockStatic(EntityManagerUtil.class);
         mockedUtil.when(EntityManagerUtil::getEntityManager).thenReturn(em);
         lenient().when(em.getTransaction()).thenReturn(tx);
+        lenient().when(tx.isActive()).thenReturn(true);
 
         testUser = new User("author", "author@test.com", "password123");
         testUser.setId(1L);
