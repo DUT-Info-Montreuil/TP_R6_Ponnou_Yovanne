@@ -8,16 +8,22 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import javax.ws.rs.ApplicationPath;
+import lombok.extern.slf4j.Slf4j;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.ServerProperties;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.jaas.JaasConfig;
 
 import java.util.Set;
 
+@Slf4j
 @ApplicationPath("/api")
 public class RestApplication extends ResourceConfig {
 
     public RestApplication() {
+        JaasConfig.install();
+        log.info("JAAS configuration installed (MasterAnnonceLogin, MasterAnnonceToken)");
+
         packages(
                 "org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.controller",
                 "org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.controller",

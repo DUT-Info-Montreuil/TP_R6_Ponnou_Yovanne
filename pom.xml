@@ -234,6 +234,9 @@
                     <container>
                         <containerId>tomcat9x</containerId>
                         <type>embedded</type>
+                        <systemProperties>
+                            <java.security.auth.login.config>${project.basedir}/src/main/resources/jaas.conf</java.security.auth.login.config>
+                        </systemProperties>
                     </container>
                     <configuration>
                         <properties>
