@@ -60,7 +60,7 @@ public abstract class CategoryControllerRestTestBase {
 
     @BeforeEach
     void setUpToken() {
-        token = TokenStore.generateToken(1L);
+        token = TokenStore.generateToken(1L, "testuser");
     }
 
     @AfterEach

@@ -31,7 +31,7 @@ class UpdateUserControllerRestTest extends UserControllerRestTestBase {
         Map<?, ?> created = createResp.readEntity(Map.class);
         Number id = (Number) created.get("id");
 
-        String token = TokenStore.generateToken(id.longValue());
+        String token = TokenStore.generateToken(id.longValue(), "charlie");
 
         Response response = jerseyTest.target("/users/" + id)
                 .request(MediaType.APPLICATION_JSON)

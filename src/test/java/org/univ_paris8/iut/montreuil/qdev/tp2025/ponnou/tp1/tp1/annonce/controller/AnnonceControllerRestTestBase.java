@@ -87,8 +87,8 @@ public abstract class AnnonceControllerRestTestBase {
         em.getTransaction().commit();
         em.close();
 
-        token = TokenStore.generateToken(testUser.getId());
-        otherToken = TokenStore.generateToken(otherUser.getId());
+        token = TokenStore.generateToken(testUser.getId(), testUser.getUsername());
+        otherToken = TokenStore.generateToken(otherUser.getId(), otherUser.getUsername());
     }
 
     @AfterEach
