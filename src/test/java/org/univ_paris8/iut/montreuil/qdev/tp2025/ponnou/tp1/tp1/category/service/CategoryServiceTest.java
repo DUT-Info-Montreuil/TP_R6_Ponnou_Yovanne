@@ -19,17 +19,17 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-/**
- * Niveau 2 – Tests unitaires CategoryService (Mockito)
- * Règles métier : unicité du label, suppression impossible si annonces liées
- */
 @ExtendWith(MockitoExtension.class)
 class CategoryServiceTest {
 
-    @Mock private CategoryRepository categoryRepository;
-    @Mock private AnnonceRepository annonceRepository;
-    @Mock private EntityManager em;
-    @Mock private EntityTransaction tx;
+    @Mock
+    private CategoryRepository categoryRepository;
+    @Mock
+    private AnnonceRepository annonceRepository;
+    @Mock
+    private EntityManager em;
+    @Mock
+    private EntityTransaction tx;
 
     private CategoryService categoryService;
     private MockedStatic<EntityManagerUtil> mockedUtil;

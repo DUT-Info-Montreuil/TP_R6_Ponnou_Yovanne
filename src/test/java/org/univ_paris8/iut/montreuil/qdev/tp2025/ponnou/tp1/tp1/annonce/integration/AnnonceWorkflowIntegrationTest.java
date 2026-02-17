@@ -20,11 +20,6 @@ import org.mockito.MockedStatic;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-/**
- * Niveau 3a – Tests d'intégration métier
- * Enchaînement complet : création utilisateur → création catégorie →
- * création annonce → publication → recherche
- */
 class AnnonceWorkflowIntegrationTest {
 
     private static EntityManagerFactory emf;
@@ -41,7 +36,8 @@ class AnnonceWorkflowIntegrationTest {
 
     @AfterAll
     static void tearDownFactory() {
-        if (emf != null) emf.close();
+        if (emf != null)
+            emf.close();
     }
 
     @BeforeEach

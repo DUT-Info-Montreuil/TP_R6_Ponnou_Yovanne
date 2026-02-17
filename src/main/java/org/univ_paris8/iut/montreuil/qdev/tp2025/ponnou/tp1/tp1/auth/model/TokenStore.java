@@ -21,10 +21,6 @@ public final class TokenStore {
         return Optional.ofNullable(tokens.get(token));
     }
 
-    public static Optional<Long> getUserId(String token) {
-        return getTokenInfo(token).map(TokenInfo::getUserId);
-    }
-
     public static void removeToken(String token) {
         tokens.remove(token);
     }
