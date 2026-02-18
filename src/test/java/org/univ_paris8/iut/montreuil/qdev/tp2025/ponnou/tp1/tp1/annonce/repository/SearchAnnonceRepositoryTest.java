@@ -7,130 +7,11 @@ import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.C
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
 
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class AnnonceRepositoryTest {
-
-    private static EntityManagerFactory emf;
-    private EntityManager em;
-    private AnnonceRepository annonceRepository;
-
-    private User testUser;
-    private Category testCategory;
-
-    @BeforeAll
-    static void setUpFactory() {
-        emf = Persistence.createEntityManagerFactory("MasterAnnoncePU");
-    }
-
-    @AfterAll
-    static void tearDownFactory() {
-        if (emf != null) emf.close();
-    }
-
-    @BeforeEach
-    void setUp() {
-        em = emf.createEntityManager();
-        annonceRepository = new AnnonceRepository();
-
-        testUser = new User("testuser", "testuser@test.com", "password123");
-        testCategory = new Category("Immobilier");
-
-        em.getTransaction().begin();
-        em.persist(testUser);
-        em.persist(testCategory);
-        em.getTransaction().commit();
-    }
-
-    @AfterEach
-    void tearDown() {
-        if (em.getTransaction().isActive()) {
-            em.getTransaction().rollback();
-        }
-        em.getTransaction().begin();
-        em.createQuery("DELETE FROM Annonce").executeUpdate();
-        em.createQuery("DELETE FROM Category").executeUpdate();
-        em.createQuery("DELETE FROM User").executeUpdate();
-        em.getTransaction().commit();
-        em.close();
-    }
-
-    private Annonce createAnnonce(String title, String description, AnnonceStatus status) {
-        Annonce annonce = new Annonce(title, description, "Paris", "contact@test.com");
-        annonce.setAuthor(testUser);
-        annonce.setCategory(testCategory);
-        annonce.setStatus(status);
-        return annonce;
-    }
-
-    // ==================== TESTS CRUD ====================
-
-    @Test
-    @DisplayName("save() persiste une annonce avec ses relations")
-    void save_shouldPersistAnnonce() {
-        Annonce annonce = createAnnonce("Appartement F3", "Bel appart lumineux", AnnonceStatus.DRAFT);
-
-        em.getTransaction().begin();
-        Annonce saved = annonceRepository.save(em, annonce);
-
-        assertNotNull(saved.getId());
-        assertEquals("Appartement F3", saved.getTitle());
-        assertEquals(AnnonceStatus.DRAFT, saved.getStatus());
-        assertNotNull(saved.getDate());
-        assertEquals(testUser.getId(), saved.getAuthor().getId());
-        assertEquals(testCategory.getId(), saved.getCategory().getId());
-    }
-
-    @Test
-    @DisplayName("findById() retourne l'annonce existante")
-    void findById_shouldReturnAnnonce() {
-        Annonce annonce = createAnnonce("Maison", "Grande maison", AnnonceStatus.DRAFT);
-        em.getTransaction().begin();
-        annonceRepository.save(em, annonce);
-
-        Optional<Annonce> found = annonceRepository.findById(em, annonce.getId());
-
-        assertTrue(found.isPresent());
-        assertEquals("Maison", found.get().getTitle());
-    }
-
-    @Test
-    @DisplayName("update() met a jour le titre et le statut")
-    void update_shouldModifyAnnonce() {
-        Annonce annonce = createAnnonce("Ancien titre", "Description", AnnonceStatus.DRAFT);
-        em.getTransaction().begin();
-        annonceRepository.save(em, annonce);
-        em.getTransaction().commit();
-
-        annonce.setTitle("Nouveau titre");
-        annonce.setStatus(AnnonceStatus.PUBLISHED);
-        em.getTransaction().begin();
-        Annonce updated = annonceRepository.update(em, annonce);
-
-        assertEquals("Nouveau titre", updated.getTitle());
-        assertEquals(AnnonceStatus.PUBLISHED, updated.getStatus());
-    }
-
-    @Test
-    @DisplayName("deleteById() supprime l'annonce")
-    void deleteById_shouldRemoveAnnonce() {
-        Annonce annonce = createAnnonce("A supprimer", "Desc", AnnonceStatus.DRAFT);
-        em.getTransaction().begin();
-        annonceRepository.save(em, annonce);
-        Long id = annonce.getId();
-        em.getTransaction().commit();
-
-        em.getTransaction().begin();
-        annonceRepository.deleteById(em, id);
-
-        assertTrue(annonceRepository.findById(em, id).isEmpty());
-    }
-
-    // ==================== TESTS RECHERCHE ET PAGINATION ====================
+class SearchAnnonceRepositoryTest extends AnnonceRepositoryTestBase {
 
     @Test
     @DisplayName("findWithFilters() filtre par statut PUBLISHED")
@@ -172,8 +53,7 @@ class AnnonceRepositoryTest {
     void findWithFilters_shouldPaginateResults() {
         em.getTransaction().begin();
         for (int i = 0; i < 15; i++) {
-            Annonce a = createAnnonce("Annonce " + i, "Description " + i, AnnonceStatus.PUBLISHED);
-            em.persist(a);
+            em.persist(createAnnonce("Annonce " + i, "Description " + i, AnnonceStatus.PUBLISHED));
         }
         em.getTransaction().commit();
 

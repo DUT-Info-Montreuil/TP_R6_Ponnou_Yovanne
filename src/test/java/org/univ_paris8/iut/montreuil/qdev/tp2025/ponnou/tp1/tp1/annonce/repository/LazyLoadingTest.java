@@ -15,14 +15,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Niveau 3b – Tests reproduisant le problème Lazy Loading / N+1
- *
- * Démontre que :
- * - Sans JOIN FETCH, accéder aux relations LAZY hors session lève une exception
- * - Avec JOIN FETCH, les relations sont chargées correctement
- * - Le problème N+1 se manifeste lors d'accès itératif aux relations
- */
 class LazyLoadingTest {
 
     private static EntityManagerFactory emf;
@@ -37,7 +29,8 @@ class LazyLoadingTest {
 
     @AfterAll
     static void tearDownFactory() {
-        if (emf != null) emf.close();
+        if (emf != null)
+            emf.close();
     }
 
     @BeforeEach
@@ -131,8 +124,6 @@ class LazyLoadingTest {
                 null, null, "title ASC", null);
         assertEquals(5, annonces.size());
 
-        // Accéder à l'auteur de chaque annonce (N requêtes supplémentaires)
-        // Ceci fonctionne car l'EM est encore ouvert, mais génère N requêtes SELECT
         for (Annonce a : annonces) {
             assertNotNull(a.getAuthor().getUsername()); // Chaque appel = 1 requête SQL
         }
@@ -163,7 +154,8 @@ class LazyLoadingTest {
         }
     }
 
-    // ==================== findById vs findOneWithFilters + JOIN FETCH ====================
+    // ==================== findById vs findOneWithFilters + JOIN FETCH
+    // ====================
 
     @Test
     @DisplayName("findById() simple ne charge pas les relations (LAZY)")
