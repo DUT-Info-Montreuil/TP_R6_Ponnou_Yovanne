@@ -1,11 +1,95 @@
 ## Architecture
 
-Le projet suit une architecture en couches :
+### Structure en couches
 
-1. `controller` (ressources REST JAX-RS)
-2. `service` (règles métier + transactions)
-3. `repository` (accès données JPA)
-4. `model` (entités JPA)
+```
+REST Controllers  (JAX-RS @Path)
+       ↓
+   Services       (règles métier, transactions JPA manuelles)
+       ↓
+  Repositories    (JPQL via GenericRepository<T, ID>)
+       ↓
+    Entités JPA   (Hibernate, lazy loading, verrou optimiste)
+       ↓
+   PostgreSQL / H2
+```
+
+### Organisation des packages
+
+```
+src/main/java/.../
+├── annonce/
+│   ├── controller/   AnnonceController.java        GET/POST/PUT/PATCH/DELETE /api/annonces
+│   ├── service/      AnnonceService.java            cycle de vie, règles métier, pagination
+│   ├── repository/   AnnonceRepository.java         requêtes JPQL, filtres, tri
+│   ├── model/        Annonce.java, AnnonceStatus.java
+│   ├── dto/          AnnonceDTO / CreateDTO / UpdateDTO / PatchDTO
+│   └── mappers/      AnnonceMapper.java
+│
+├── user/
+│   ├── controller/   UserController.java            CRUD /api/users
+│   ├── service/      UserService.java               hash mdp, vérif email unique
+│   ├── repository/   UserRepository.java
+│   ├── model/        User.java
+│   ├── dto/          UserDTO / CreateDTO / UpdateDTO / PatchDTO
+│   └── mapper/       UserMapper.java
+│
+├── category/
+│   ├── controller/   CategoryController.java        CRUD /api/categories
+│   ├── service/      CategoryService.java
+│   ├── repository/   CategoryRepository.java
+│   ├── model/        Category.java
+│   ├── dto/          CategoryDTO / CreateDTO / UpdateDTO / PatchDTO
+│   └── mapper/       CategoryMapper.java
+│
+├── auth/
+│   ├── controller/   AuthController.java            POST /api/login
+│   ├── jaas/         DbLoginModule.java             validation credentials en base
+│   │                 TokenLoginModule.java          validation token en mémoire
+│   │                 JaasConfig.java, UserPrincipal.java, RolePrincipal.java
+│   ├── filter/       AuthTokenFilter.java           intercepte les endpoints @Secured
+│   └── model/        Secured.java (annotation @NameBinding), TokenStore.java
+│
+└── common/
+    ├── config/       RestApplication.java           ResourceConfig + Swagger
+    │                 EntityManagerUtil.java         factory singleton
+    │                 PasswordUtils.java             SHA-256
+    ├── repository/   GenericRepository.java         CRUD + filtres + pagination (base commune)
+    ├── exception/    ExceptionMappers.java, ResourceNotFoundException, ForbiddenOperationException
+    ├── logging/      RequestResponseLoggingFilter.java  (MDC request_id)
+    └── dto/          PaginatedResponse.java
+```
+
+### Modèle de données
+
+```
+User ──< Annonce >── Category
+```
+
+| Entité | Champs notables |
+|---|---|
+| `User` | id, username (unique), email (unique), password (SHA-256), createdAt |
+| `Category` | id, label (unique, max 100) |
+| `Annonce` | id, title (max 64), description (max 256), adress, mail, date, status (DRAFT/PUBLISHED/ARCHIVED), version (verrou optimiste), author (User, LAZY), category (Category, LAZY) |
+
+### Structure des tests
+
+```
+src/test/java/.../
+├── annonce/
+│   ├── service/      *ServiceTest.java          tests unitaires (Mockito, sans BDD)
+│   ├── controller/   *ControllerRestTest.java   tests REST (Jersey TestContainer + H2)
+│   ├── repository/   *RepositoryTest.java       tests JPA (H2 in-memory)
+│   └── integration/  AnnonceWorkflowIntegrationTest.java
+├── user/             (idem)
+├── category/         (idem)
+└── auth/
+    ├── jaas/         DbLoginModuleTest, TokenLoginModuleTest
+    ├── controller/   LoginAuthControllerRestTest
+    └── integration/  AuthFlowIntegrationTest
+```
+
+La base H2 est recréée à chaque classe de test (`create-drop`). Les tests unitaires mockent les repositories via Mockito et ne touchent pas à la base.
 
 ## Industrialisation
 
