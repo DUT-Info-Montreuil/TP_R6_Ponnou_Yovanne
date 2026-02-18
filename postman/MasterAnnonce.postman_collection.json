@@ -1,0 +1,598 @@
+{
+  "info": {
+    "name": "MasterAnnonce API",
+    "description": "Collection Postman pour l'API REST MasterAnnonce (TP Dev Avance #3).\n\nWorkflow typique :\n1. Creer un utilisateur (POST /users)\n2. Se connecter (POST /login) -> copier le token\n3. Utiliser le token dans les endpoints proteges",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/masterannonce/api"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "categoryId",
+      "value": ""
+    },
+    {
+      "key": "annonceId",
+      "value": ""
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Demo (Exercice 1)",
+      "item": [
+        {
+          "name": "Hello World",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/helloWorld",
+              "host": ["{{baseUrl}}"],
+              "path": ["helloWorld"]
+            }
+          }
+        },
+        {
+          "name": "Params - QueryParams",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/params?name=Yovanne&count=3",
+              "host": ["{{baseUrl}}"],
+              "path": ["params"],
+              "query": [
+                { "key": "name", "value": "Yovanne" },
+                { "key": "count", "value": "3" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Params - PathParams",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/params/42?detail=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["params", "42"],
+              "query": [
+                { "key": "detail", "value": "true" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    pm.test('Token received', function() {",
+                  "        pm.expect(json.token).to.be.a('string');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["login"]
+            }
+          }
+        },
+        {
+          "name": "Login - Invalid credentials",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"wrongpassword\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('userId', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"testuser@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "Get All Users",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"updateduser\",\n  \"email\": \"updated@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Patch User",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"patched@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "Create Category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('categoryId', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"Immobilier\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["categories"]
+            }
+          }
+        },
+        {
+          "name": "Get All Categories",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["categories"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Category by ID",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories/{{categoryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["categories", "{{categoryId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Category",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"Vehicules\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/categories/{{categoryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["categories", "{{categoryId}}"]
+            }
+          }
+        },
+        {
+          "name": "Patch Category",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"Services\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/categories/{{categoryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["categories", "{{categoryId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Category",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories/{{categoryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["categories", "{{categoryId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Annonces",
+      "item": [
+        {
+          "name": "Create Annonce",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('annonceId', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Appartement T3 Paris 12\",\n  \"description\": \"Bel appartement lumineux, 65m2\",\n  \"adress\": \"12 rue de Lyon, 75012 Paris\",\n  \"mail\": \"contact@example.com\",\n  \"categoryId\": {{categoryId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/annonces",
+              "host": ["{{baseUrl}}"],
+              "path": ["annonces"]
+            }
+          }
+        },
+        {
+          "name": "Get All Annonces",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/annonces?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["annonces"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Annonce by ID",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/annonces/{{annonceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["annonces", "{{annonceId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Annonce",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Appartement T3 Renove\",\n  \"description\": \"Appartement entierement renove, 65m2\",\n  \"adress\": \"12 rue de Lyon, 75012 Paris\",\n  \"mail\": \"contact@example.com\",\n  \"categoryId\": {{categoryId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/annonces/{{annonceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["annonces", "{{annonceId}}"]
+            }
+          }
+        },
+        {
+          "name": "Patch Annonce",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Appartement T3 - Prix reduit\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/annonces/{{annonceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["annonces", "{{annonceId}}"]
+            }
+          }
+        },
+        {
+          "name": "Publish Annonce",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/annonces/{{annonceId}}/publish",
+              "host": ["{{baseUrl}}"],
+              "path": ["annonces", "{{annonceId}}", "publish"]
+            }
+          }
+        },
+        {
+          "name": "Archive Annonce",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/annonces/{{annonceId}}/archive",
+              "host": ["{{baseUrl}}"],
+              "path": ["annonces", "{{annonceId}}", "archive"]
+            }
+          }
+        },
+        {
+          "name": "Delete Annonce (must be archived)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/annonces/{{annonceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["annonces", "{{annonceId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Security Tests",
+      "item": [
+        {
+          "name": "Protected endpoint - No token (401)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test\",\n  \"description\": \"Should fail\",\n  \"adress\": \"Somewhere\",\n  \"mail\": \"test@test.com\",\n  \"categoryId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/annonces",
+              "host": ["{{baseUrl}}"],
+              "path": ["annonces"]
+            }
+          }
+        },
+        {
+          "name": "Protected endpoint - Invalid token (401)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "invalid-token-value", "type": "string" }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test\",\n  \"description\": \"Should fail\",\n  \"adress\": \"Somewhere\",\n  \"mail\": \"test@test.com\",\n  \"categoryId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/annonces",
+              "host": ["{{baseUrl}}"],
+              "path": ["annonces"]
+            }
+          }
+        },
+        {
+          "name": "Validation error (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"\",\n  \"description\": \"\",\n  \"adress\": \"\",\n  \"mail\": \"invalid-email\",\n  \"categoryId\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/annonces",
+              "host": ["{{baseUrl}}"],
+              "path": ["annonces"]
+            }
+          }
+        },
+        {
+          "name": "Resource not found (404)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/annonces/99999",
+              "host": ["{{baseUrl}}"],
+              "path": ["annonces", "99999"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

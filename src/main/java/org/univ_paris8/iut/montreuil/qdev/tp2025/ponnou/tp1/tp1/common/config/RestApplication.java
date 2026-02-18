@@ -30,6 +30,7 @@ public class RestApplication extends ResourceConfig {
                 "org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.controller",
                 "org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.controller",
                 "org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.filter",
+                "org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.controller",
                 "org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.logging",
                 "org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception"
         );
@@ -60,7 +61,8 @@ public class RestApplication extends ResourceConfig {
                         "org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.controller",
                         "org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.controller",
                         "org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.controller",
-                        "org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.controller"
+                        "org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.controller",
+                        "org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.controller"
                 ));
 
         OpenApiResource openApiResource = new OpenApiResource();

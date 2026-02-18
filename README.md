@@ -17,6 +17,22 @@ Composants transverses:
 - Gestion centralisee des erreurs REST
 - Authentification stateless par token
 
+## Exercice 1 - Choix de configuration JAX-RS
+
+Le projet utilise **Jersey 2.41** comme implementation JAX-RS. Ce choix se justifie par :
+
+- **Compatibilite Tomcat** : Jersey fonctionne nativement en tant que servlet filter dans un conteneur Servlet standard (Tomcat 9), sans necessiter un serveur d'applications complet (Payara, WildFly).
+- **Pas de Spring** : contrairement a RESTEasy qui est souvent couple a un serveur JBoss/WildFly ou a Spring, Jersey s'integre facilement dans un WAR minimal deploye sur Tomcat via `jersey-container-servlet`.
+- **Injection de dependances via HK2** : Jersey embarque HK2, ce qui permet l'injection de dependances (`@Context`, `@QueryParam`, `@PathParam`, etc.) sans framework externe.
+- **Jackson natif** : le module `jersey-media-json-jackson` assure la serialisation/deserialisation JSON sans configuration supplementaire.
+- **Bean Validation integree** : le module `jersey-bean-validation` active `javax.validation` directement sur les parametres des ressources.
+- **Framework de test** : `jersey-test-framework` (Grizzly2) permet de lancer un serveur HTTP embarque pour les tests d'integration REST sans deployer de WAR.
+
+Les endpoints de demonstration sont exposes sur :
+- `GET /api/helloWorld` — retourne `{"message": "Hello World"}`
+- `GET /api/params?name=X&count=N` — demonstration de `@QueryParam`
+- `GET /api/params/{id}?detail=true` — demonstration de `@PathParam` + `@QueryParam`
+
 ## Exercice 10 - Industrialisation
 
 ### 1) Lancer separement tests unitaires et tests d'integration
@@ -107,6 +123,36 @@ Sans OpenAPI, l'exploration des endpoints dependait du code source et des tests.
 
 4. Charge testee manuellement et de facon non reproductible
 Les verifications de performance etaient manuelles et non comparables dans le temps. La solution a ete d'ajouter un script k6 versionne dans le repo, avec scenario et seuils minimaux reproductibles.
+
+## Flow d'authentification (JAAS)
+
+1. **Login** : `POST /api/login` avec `{"username": "...", "password": "..."}`.
+   - Le `AuthController` cree un `LoginContext("MasterAnnonceLogin", callbackHandler)`.
+   - Le `DbLoginModule` verifie les credentials en base via `UserService.authenticate()`.
+   - En cas de succes, un token UUID est genere via `TokenStore`, et le `Subject` est peuple avec `UserPrincipal` + `RolePrincipal`.
+   - Le token est retourne au client dans `{"token": "uuid", "username": "..."}`.
+
+2. **Requete protegee** : le client envoie `Authorization: Bearer <token>` a chaque appel.
+   - Le `AuthTokenFilter` (JAX-RS `@NameBinding`) intercepte les endpoints annotes `@Secured`.
+   - Il cree un `LoginContext("MasterAnnonceToken", callbackHandler)` avec le token.
+   - Le `TokenLoginModule` valide le token dans le `TokenStore` en memoire et reconstitue le `Subject`.
+   - L'identite (`userId`) est injectee dans le `ContainerRequestContext` et un `SecurityContext` custom est mis en place.
+
+3. **Code metier** : les services recuperent le `userId` depuis le contexte pour appliquer les regles (seul l'auteur modifie/supprime, etc.).
+
+## Collection Postman
+
+La collection Postman est disponible dans `postman/MasterAnnonce.postman_collection.json`.
+
+Elle contient des requetes organisees par dossier :
+- **Demo** : helloWorld, params (QueryParam + PathParam)
+- **Auth** : login valide, login invalide
+- **Users** : CRUD complet
+- **Categories** : CRUD complet
+- **Annonces** : CRUD + publish + archive + delete
+- **Security Tests** : 401 sans token, 401 token invalide, 400 validation, 404
+
+Le script de login sauvegarde automatiquement le token dans la variable `{{token}}` pour les requetes suivantes.
 
 ## Fichiers modifies pour l'exercice 10
 
