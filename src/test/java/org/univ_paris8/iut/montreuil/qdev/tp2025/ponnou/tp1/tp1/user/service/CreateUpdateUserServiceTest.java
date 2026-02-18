@@ -2,6 +2,7 @@ package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.service;
 
 import org.junit.jupiter.api.*;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.config.EntityManagerUtil;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.config.PasswordUtils;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
 
 import java.util.Map;
@@ -102,7 +103,7 @@ class CreateUpdateUserServiceTest extends UserServiceTestBase {
 
         userService.changePassword(1L, "newpass456");
 
-        assertEquals("newpass456", eve.getPassword());
+        assertEquals(PasswordUtils.hash("newpass456"), eve.getPassword());
         verify(userRepository).update(em, eve);
         verify(tx).commit();
     }

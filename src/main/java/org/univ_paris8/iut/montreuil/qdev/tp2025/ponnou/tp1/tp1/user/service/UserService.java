@@ -2,6 +2,7 @@ package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.config.EntityManagerUtil;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.config.PasswordUtils;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.repository.UserRepository;
 
@@ -41,7 +42,7 @@ public class UserService {
                 throw new IllegalArgumentException("Cet email existe déjà");
             }
 
-            User user = new User(username, email, password);
+            User user = new User(username, email, PasswordUtils.hash(password));
             User saved = userRepository.save(em, user);
             tx.commit();
             log.info("User created id={}", saved.getId());
@@ -111,7 +112,7 @@ public class UserService {
                         return new IllegalArgumentException("Utilisateur non trouvé");
                     });
 
-            user.setPassword(newPassword);
+            user.setPassword(PasswordUtils.hash(newPassword));
             userRepository.update(em, user);
             tx.commit();
             log.info("Password changed for user id={}", id);
@@ -130,13 +131,14 @@ public class UserService {
         log.debug("Authenticating user username={}", username);
         EntityManager em = EntityManagerUtil.getEntityManager();
         try {
-            Optional<User> user = userRepository.findOneWithFilters(em, Map.of("username", username, "password", password));
-            if (user.isPresent()) {
+            Optional<User> user = userRepository.findOneWithFilters(em, Map.of("username", username));
+            if (user.isPresent() && PasswordUtils.matches(password, user.get().getPassword())) {
                 log.info("Authentication successful username={}", username);
+                return user;
             } else {
                 log.warn("Authentication failed username={}", username);
+                return Optional.empty();
             }
-            return user;
         } finally {
             em.close();
         }
@@ -219,7 +221,7 @@ public class UserService {
                 user.setEmail(email);
             }
             if (password != null) {
-                user.setPassword(password);
+                user.setPassword(PasswordUtils.hash(password));
             }
 
             User updated = userRepository.update(em, user);

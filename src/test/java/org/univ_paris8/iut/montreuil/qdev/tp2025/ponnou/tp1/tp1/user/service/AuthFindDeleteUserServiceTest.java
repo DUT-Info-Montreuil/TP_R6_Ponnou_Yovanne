@@ -1,6 +1,7 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.service;
 
 import org.junit.jupiter.api.*;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.config.PasswordUtils;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
 
 import java.util.List;
@@ -15,10 +16,10 @@ class AuthFindDeleteUserServiceTest extends UserServiceTestBase {
     @Test
     @DisplayName("authenticate() retourne l'utilisateur avec les bons identifiants")
     void authenticate_shouldReturnUser_whenCredentialsValid() {
-        User dave = new User("dave", "dave@test.com", "secret123");
+        User dave = new User("dave", "dave@test.com", PasswordUtils.hash("secret123"));
         dave.setId(1L);
 
-        when(userRepository.findOneWithFilters(eq(em), eq(Map.of("username", "dave", "password", "secret123"))))
+        when(userRepository.findOneWithFilters(eq(em), eq(Map.of("username", "dave"))))
                 .thenReturn(Optional.of(dave));
 
         Optional<User> result = userService.authenticate("dave", "secret123");
@@ -30,8 +31,11 @@ class AuthFindDeleteUserServiceTest extends UserServiceTestBase {
     @Test
     @DisplayName("authenticate() retourne vide avec un mauvais mot de passe")
     void authenticate_shouldReturnEmpty_whenWrongPassword() {
-        when(userRepository.findOneWithFilters(eq(em), eq(Map.of("username", "dave", "password", "wrongpassword"))))
-                .thenReturn(Optional.empty());
+        User dave = new User("dave", "dave@test.com", PasswordUtils.hash("secret123"));
+        dave.setId(1L);
+
+        when(userRepository.findOneWithFilters(eq(em), eq(Map.of("username", "dave"))))
+                .thenReturn(Optional.of(dave));
 
         Optional<User> result = userService.authenticate("dave", "wrongpassword");
 
@@ -41,7 +45,7 @@ class AuthFindDeleteUserServiceTest extends UserServiceTestBase {
     @Test
     @DisplayName("authenticate() retourne vide avec un username inconnu")
     void authenticate_shouldReturnEmpty_whenUnknownUsername() {
-        when(userRepository.findOneWithFilters(eq(em), eq(Map.of("username", "inconnu", "password", "password"))))
+        when(userRepository.findOneWithFilters(eq(em), eq(Map.of("username", "inconnu"))))
                 .thenReturn(Optional.empty());
 
         Optional<User> result = userService.authenticate("inconnu", "password");
