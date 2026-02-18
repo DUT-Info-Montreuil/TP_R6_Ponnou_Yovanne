@@ -20,11 +20,11 @@
 <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-standalone-preset.js"></script>
 <script>
     (function () {
-        const path = window.location.pathname;
+        const path = globalThis.location.pathname;
         const contextPath = path.replace(/\/swagger-ui\/?$/, "");
-        const openApiUrl = `${window.location.origin}${contextPath}/api/openapi.json`;
+        const openApiUrl = `${globalThis.location.origin}${contextPath}/api/openapi.json`;
 
-        window.ui = SwaggerUIBundle({
+        globalThis.ui = SwaggerUIBundle({
             url: openApiUrl,
             dom_id: "#swagger-ui",
             deepLinking: true,
