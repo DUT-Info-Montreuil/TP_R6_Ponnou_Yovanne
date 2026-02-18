@@ -7,6 +7,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.servers.Server;
 import javax.ws.rs.ApplicationPath;
 import lombok.extern.slf4j.Slf4j;
 import org.glassfish.jersey.jackson.JacksonFeature;
@@ -14,6 +15,7 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.ServerProperties;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.jaas.JaasConfig;
 
+import java.util.List;
 import java.util.Set;
 
 @Slf4j
@@ -45,6 +47,7 @@ public class RestApplication extends ResourceConfig {
                         .title("MasterAnnonce API")
                         .version("1.0.0")
                         .description("API REST stateless pour la gestion des annonces, utilisateurs et categories."))
+                .servers(List.of(new Server().url("/masterannonce").description("Tomcat local")))
                 .components(new Components().addSecuritySchemes(
                         "bearerAuth",
                         new SecurityScheme()
