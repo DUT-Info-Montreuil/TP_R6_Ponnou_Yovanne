@@ -85,8 +85,8 @@ export function scenarioLecture() {
                     try { return Array.isArray(JSON.parse(r.body).items); }
                     catch (e) { return false; }
                 },
-                'total >= 0':  (r) => {
-                    try { return JSON.parse(r.body).total >= 0; }
+                'totalItems >= 0':  (r) => {
+                    try { return JSON.parse(r.body).totalItems >= 0; }
                     catch (e) { return false; }
                 },
             });
