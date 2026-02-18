@@ -9,6 +9,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockito.MockedStatic;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.jaas.JaasConfig;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.model.TokenStore;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.Category;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.config.EntityManagerUtil;
@@ -41,6 +42,7 @@ public abstract class AnnonceControllerRestTestBase {
 
     @BeforeAll
     static void setUpAll() throws Exception {
+        JaasConfig.install();
         emf = Persistence.createEntityManagerFactory("MasterAnnoncePU");
 
         mockedUtil = mockStatic(EntityManagerUtil.class);
