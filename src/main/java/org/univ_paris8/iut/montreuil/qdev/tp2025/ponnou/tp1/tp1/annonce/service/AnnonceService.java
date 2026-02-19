@@ -40,7 +40,7 @@ public class AnnonceService {
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Categorie non trouvee"));
 
-        Annonce annonce = new Annonce(title, description, adress, mail);
+        Annonce annonce = annonceMapper.toEntityForCreate(title, description, adress, mail);
         annonce.setAuthor(author);
         annonce.setCategory(category);
         annonce.setStatus(AnnonceStatus.DRAFT);

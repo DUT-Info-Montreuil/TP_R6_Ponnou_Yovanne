@@ -31,7 +31,7 @@ public class UserService {
             throw new IllegalArgumentException("Cet email existe deja");
         }
 
-        User user = new User(username, email, PasswordUtils.hash(password));
+        User user = userMapper.toEntityForCreate(username, email, PasswordUtils.hash(password));
         return userRepository.save(user);
     }
 

@@ -30,7 +30,7 @@ public class CategoryService {
             throw new IllegalArgumentException("Cette categorie existe deja");
         }
 
-        Category category = new Category(label);
+        Category category = categoryMapper.toEntityForCreate(label);
         return categoryRepository.save(category);
     }
 

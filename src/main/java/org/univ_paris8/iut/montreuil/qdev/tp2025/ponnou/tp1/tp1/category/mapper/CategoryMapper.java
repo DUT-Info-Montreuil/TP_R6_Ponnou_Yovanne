@@ -11,8 +11,12 @@ import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.C
 
 import java.util.List;
 
-@Mapper
+@Mapper(componentModel = "spring")
 public interface CategoryMapper {
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "annonces", ignore = true)
+    Category toEntityForCreate(String label);
 
     CategoryDTO toDTO(Category entity);
 

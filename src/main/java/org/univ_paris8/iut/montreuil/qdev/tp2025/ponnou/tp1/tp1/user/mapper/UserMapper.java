@@ -11,8 +11,14 @@ import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
 
 import java.util.List;
 
-@Mapper
+@Mapper(componentModel = "spring")
 public interface UserMapper {
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "annonces", ignore = true)
+    @Mapping(target = "role", ignore = true)
+    User toEntityForCreate(String username, String email, String password);
 
     UserDTO toDTO(User entity);
 

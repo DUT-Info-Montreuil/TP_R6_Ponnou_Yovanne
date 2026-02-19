@@ -19,6 +19,21 @@ class AnnonceMapperTest {
     private final AnnonceMapper mapper = Mappers.getMapper(AnnonceMapper.class);
 
     @Test
+    @DisplayName("toEntityForCreate() mappe les champs de creation")
+    void toEntityForCreate_shouldMapCreateFields() {
+        Annonce annonce = mapper.toEntityForCreate("T1", "D1", "A1", "m1@test.com");
+
+        assertNotNull(annonce);
+        assertEquals("T1", annonce.getTitle());
+        assertEquals("D1", annonce.getDescription());
+        assertEquals("A1", annonce.getAdress());
+        assertEquals("m1@test.com", annonce.getMail());
+        assertNull(annonce.getId());
+        assertNull(annonce.getAuthor());
+        assertNull(annonce.getCategory());
+    }
+
+    @Test
     @DisplayName("toDTO() mappe tous les champs correctement")
     void toDTO_shouldMapAllFields() {
         Annonce annonce = new Annonce("Appart F3", "Bel appartement", "Paris 10", "contact@test.com");

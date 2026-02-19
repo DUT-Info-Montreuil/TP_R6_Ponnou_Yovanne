@@ -16,6 +16,14 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface AnnonceMapper {
 
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "date", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "author", ignore = true)
+    @Mapping(target = "category", ignore = true)
+    Annonce toEntityForCreate(String title, String description, String adress, String mail);
+
     @Mapping(source = "status", target = "status", qualifiedByName = "statusToString")
     @Mapping(source = "author.username", target = "authorUsername")
     @Mapping(source = "category.label", target = "categoryLabel")

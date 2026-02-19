@@ -27,6 +27,8 @@ class CreateAnnonceServiceTest extends AnnonceServiceTestBase {
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(author));
         when(categoryRepository.findById(10L)).thenReturn(Optional.of(category));
+        when(annonceMapper.toEntityForCreate("Titre", "Description", "Paris", "mail@test.com"))
+                .thenReturn(new Annonce("Titre", "Description", "Paris", "mail@test.com"));
         when(annonceRepository.save(any(Annonce.class))).thenAnswer(invocation -> {
             Annonce annonce = invocation.getArgument(0);
             annonce.setId(100L);

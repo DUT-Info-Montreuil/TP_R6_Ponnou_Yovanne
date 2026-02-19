@@ -18,6 +18,7 @@ class CreateUpdateCategoryServiceTest extends CategoryServiceTestBase {
     @DisplayName("create_shouldSave")
     void create_shouldSave() {
         when(categoryRepository.existsByLabel("Immobilier")).thenReturn(false);
+        when(categoryMapper.toEntityForCreate("Immobilier")).thenReturn(new Category("Immobilier"));
         when(categoryRepository.save(any(Category.class))).thenAnswer(i -> {
             Category category = i.getArgument(0);
             category.setId(1L);

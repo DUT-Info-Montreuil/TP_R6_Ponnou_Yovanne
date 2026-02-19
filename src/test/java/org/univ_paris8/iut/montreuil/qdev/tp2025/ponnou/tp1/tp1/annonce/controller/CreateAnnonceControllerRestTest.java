@@ -2,12 +2,9 @@ package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.control
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.security.core.Authentication;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.dto.AnnonceDTO;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.Annonce;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.security.AuthenticatedUser;
 
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
@@ -21,9 +18,6 @@ class CreateAnnonceControllerRestTest extends AnnonceControllerRestTestBase {
     @Test
     @DisplayName("create_shouldReturn201")
     void create_shouldReturn201() throws Exception {
-        Authentication auth = mock(Authentication.class);
-        when(auth.getPrincipal()).thenReturn(new AuthenticatedUser(1L, "user", "ROLE_USER"));
-
         Annonce created = new Annonce("Titre", "Description", "Paris", "mail@test.com");
         created.setId(1L);
         AnnonceDTO dto = new AnnonceDTO();
@@ -34,7 +28,7 @@ class CreateAnnonceControllerRestTest extends AnnonceControllerRestTestBase {
         when(annonceMapper.toDTO(created)).thenReturn(dto);
 
         mockMvc.perform(post("/api/annonces")
-                         .principal(auth)
+                         .principal(authenticatedPrincipal(1L, "user", "ROLE_USER"))
                         .contentType(APPLICATION_JSON)
                         .content("""
                                 {
@@ -53,11 +47,8 @@ class CreateAnnonceControllerRestTest extends AnnonceControllerRestTestBase {
     @Test
     @DisplayName("create_shouldReturn400_whenValidationFails")
     void create_shouldReturn400_whenValidationFails() throws Exception {
-        Authentication auth = mock(Authentication.class);
-        when(auth.getPrincipal()).thenReturn(new AuthenticatedUser(1L, "user", "ROLE_USER"));
-
         mockMvc.perform(post("/api/annonces")
-                         .principal(auth)
+                         .principal(authenticatedPrincipal(1L, "user", "ROLE_USER"))
                         .contentType(APPLICATION_JSON)
                         .content("""
                                 {

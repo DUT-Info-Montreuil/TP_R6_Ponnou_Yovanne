@@ -2,6 +2,7 @@ package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.mapper
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.dto.CategoryDTO;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.Category;
@@ -12,7 +13,17 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class CategoryMapperTest {
 
-    private final CategoryMapper mapper = new CategoryMapperSpringImpl();
+    private final CategoryMapper mapper = Mappers.getMapper(CategoryMapper.class);
+
+    @Test
+    @DisplayName("toEntityForCreate() mappe les champs de creation")
+    void toEntityForCreate_shouldMapCreateFields() {
+        Category category = mapper.toEntityForCreate("Services");
+
+        assertNotNull(category);
+        assertNull(category.getId());
+        assertEquals("Services", category.getLabel());
+    }
 
     @Test
     @DisplayName("toDTO() mappe tous les champs correctement")

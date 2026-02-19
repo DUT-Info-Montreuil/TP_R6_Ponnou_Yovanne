@@ -2,6 +2,7 @@ package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.mapper;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.dto.UserDTO;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
@@ -13,7 +14,20 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class UserMapperTest {
 
-    private final UserMapper mapper = new UserMapperSpringImpl();
+    private final UserMapper mapper = Mappers.getMapper(UserMapper.class);
+
+    @Test
+    @DisplayName("toEntityForCreate() mappe les champs de creation")
+    void toEntityForCreate_shouldMapCreateFields() {
+        User user = mapper.toEntityForCreate("newuser", "new@test.com", "hashed-password");
+
+        assertNotNull(user);
+        assertNull(user.getId());
+        assertEquals("newuser", user.getUsername());
+        assertEquals("new@test.com", user.getEmail());
+        assertEquals("hashed-password", user.getPassword());
+        assertEquals("ROLE_USER", user.getRole());
+    }
 
     @Test
     @DisplayName("toDTO() mappe tous les champs correctement")

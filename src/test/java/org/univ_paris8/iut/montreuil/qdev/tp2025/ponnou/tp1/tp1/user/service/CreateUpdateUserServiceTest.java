@@ -21,6 +21,8 @@ class CreateUpdateUserServiceTest extends UserServiceTestBase {
     void create_shouldHashPasswordAndSave() {
         when(userRepository.existsByUsername("alice")).thenReturn(false);
         when(userRepository.existsByEmail("alice@test.com")).thenReturn(false);
+        when(userMapper.toEntityForCreate(any(String.class), any(String.class), any(String.class)))
+                .thenAnswer(i -> new User(i.getArgument(0), i.getArgument(1), i.getArgument(2)));
         when(userRepository.save(any(User.class))).thenAnswer(i -> {
             User user = i.getArgument(0);
             user.setId(1L);
