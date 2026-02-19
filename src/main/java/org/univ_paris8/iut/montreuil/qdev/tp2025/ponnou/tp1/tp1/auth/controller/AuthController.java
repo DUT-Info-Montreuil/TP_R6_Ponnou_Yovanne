@@ -2,6 +2,7 @@ package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.controller
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,9 +35,11 @@ public class AuthController {
     @PostMapping("/login")
     @Operation(summary = "Connexion", description = "Authentifie un utilisateur et retourne un JWT.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Authentification reussie", content = @Content()),
-            @ApiResponse(responseCode = "400", description = "Requete invalide", content = @Content()),
-            @ApiResponse(responseCode = "401", description = "Identifiants invalides", content = @Content())
+            @ApiResponse(responseCode = "200", description = "Authentification reussie"),
+            @ApiResponse(responseCode = "400", description = "Requete invalide",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Identifiants invalides",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<?> login(@Valid @RequestBody LoginDTO dto) {
         log.debug("Login attempt username={}", dto.getUsername());

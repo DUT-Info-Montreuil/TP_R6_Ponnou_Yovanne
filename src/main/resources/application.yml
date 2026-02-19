@@ -35,6 +35,18 @@ management:
     web:
       exposure:
         include: health,info
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: MasterAnnonce
+    description: API REST de gestion d'annonces
+    version: 1.0
 
 # OpenAPI
 springdoc:

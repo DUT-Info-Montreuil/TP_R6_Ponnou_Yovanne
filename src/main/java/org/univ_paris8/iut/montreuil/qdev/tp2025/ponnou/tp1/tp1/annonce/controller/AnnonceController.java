@@ -1,6 +1,8 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -26,6 +28,7 @@ import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.service.
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.utils.AnnonceFieldValidator;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.security.AuthenticatedUser;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.dto.PaginatedResponse;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ErrorResponse;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ResourceNotFoundException;
 
 import java.net.URI;
@@ -47,7 +50,10 @@ public class AnnonceController {
     @Operation(summary = "Lister les annonces", description = "Retourne la liste paginee des annonces.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Liste des annonces retournee"),
-            @ApiResponse(responseCode = "500", description = "Erreur interne")
+            @ApiResponse(responseCode = "400", description = "Requete invalide",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Erreur interne",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<PaginatedResponse<AnnonceDTO>> getAll(
             @RequestParam(defaultValue = "0") int page,
@@ -76,8 +82,10 @@ public class AnnonceController {
     @Operation(summary = "Recuperer une annonce", description = "Retourne le detail d'une annonce par son id.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Annonce retournee"),
-            @ApiResponse(responseCode = "404", description = "Annonce non trouvee"),
-            @ApiResponse(responseCode = "500", description = "Erreur interne")
+            @ApiResponse(responseCode = "404", description = "Annonce non trouvee",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Erreur interne",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<AnnonceDTO> getById(@PathVariable Long id) {
         Annonce annonce = annonceService.findById(id)
@@ -90,10 +98,14 @@ public class AnnonceController {
     @Operation(summary = "Creer une annonce", description = "Cree une annonce en statut DRAFT pour l'utilisateur authentifie.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Annonce creee"),
-            @ApiResponse(responseCode = "400", description = "Requete invalide"),
-            @ApiResponse(responseCode = "401", description = "Non authentifie"),
-            @ApiResponse(responseCode = "404", description = "Utilisateur ou categorie introuvable"),
-            @ApiResponse(responseCode = "500", description = "Erreur interne")
+            @ApiResponse(responseCode = "400", description = "Requete invalide",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Non authentifie",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Utilisateur ou categorie introuvable",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Erreur interne",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<AnnonceDTO> create(@Valid @RequestBody AnnonceCreateDTO dto, Authentication authentication) {
         Long userId = getAuthenticatedUserId(authentication);
@@ -115,6 +127,17 @@ public class AnnonceController {
     @PutMapping("/{id}")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Mettre a jour une annonce", description = "Met a jour une annonce existante.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Annonce mise a jour"),
+            @ApiResponse(responseCode = "400", description = "Requete invalide",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Operation interdite",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Annonce non trouvee",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "Conflit metier",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     public ResponseEntity<AnnonceDTO> update(@PathVariable Long id,
                                              @Valid @RequestBody AnnonceUpdateDTO dto,
                                              Authentication authentication) {
@@ -134,6 +157,15 @@ public class AnnonceController {
     @DeleteMapping("/{id}")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Supprimer une annonce", description = "Supprime une annonce archivee.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Annonce supprimee"),
+            @ApiResponse(responseCode = "403", description = "Operation interdite",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Annonce non trouvee",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "Conflit metier",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     public ResponseEntity<Void> delete(@PathVariable Long id, Authentication authentication) {
         Long userId = getAuthenticatedUserId(authentication);
         annonceService.delete(id, userId);
@@ -143,6 +175,17 @@ public class AnnonceController {
     @PatchMapping("/{id}")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Patch partiel d'une annonce", description = "Met a jour partiellement une annonce.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Annonce mise a jour"),
+            @ApiResponse(responseCode = "400", description = "Requete invalide",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Operation interdite",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Annonce non trouvee",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "Conflit metier",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     public ResponseEntity<AnnonceDTO> patch(@PathVariable Long id,
                                             @Valid @RequestBody AnnoncePatchDTO dto,
                                             Authentication authentication) {
@@ -154,6 +197,15 @@ public class AnnonceController {
     @PutMapping("/{id}/publish")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Publier une annonce", description = "Passe une annonce de DRAFT a PUBLISHED.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Annonce publiee"),
+            @ApiResponse(responseCode = "403", description = "Operation interdite",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Annonce non trouvee",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "Conflit metier",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     public ResponseEntity<AnnonceDTO> publish(@PathVariable Long id, Authentication authentication) {
         Long userId = getAuthenticatedUserId(authentication);
         Annonce published = annonceService.publish(id, userId);
@@ -164,6 +216,15 @@ public class AnnonceController {
     @SecurityRequirement(name = "bearerAuth")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Archiver une annonce", description = "Passe une annonce au statut ARCHIVED.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Annonce archivee"),
+            @ApiResponse(responseCode = "403", description = "Operation interdite",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Annonce non trouvee",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "Conflit metier",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     public ResponseEntity<AnnonceDTO> archive(@PathVariable Long id, Authentication authentication) {
         Long userId = getAuthenticatedUserId(authentication);
         Annonce archived = annonceService.archive(id, userId);

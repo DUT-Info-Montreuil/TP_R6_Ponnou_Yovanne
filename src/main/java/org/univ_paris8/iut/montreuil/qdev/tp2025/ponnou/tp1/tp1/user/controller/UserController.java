@@ -1,6 +1,8 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -15,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.dto.PaginatedResponse;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ErrorResponse;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ResourceNotFoundException;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.dto.UserCreateDTO;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.dto.UserDTO;
@@ -38,7 +41,9 @@ public class UserController {
     @GetMapping
     @Operation(summary = "Lister les utilisateurs")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Liste des utilisateurs retournee")
+            @ApiResponse(responseCode = "200", description = "Liste des utilisateurs retournee"),
+            @ApiResponse(responseCode = "400", description = "Requete invalide",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<PaginatedResponse<UserDTO>> getAll(
             @RequestParam(defaultValue = "0") int page,
@@ -53,7 +58,8 @@ public class UserController {
     @Operation(summary = "Recuperer un utilisateur")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Utilisateur retourne"),
-            @ApiResponse(responseCode = "404", description = "Utilisateur non trouve")
+            @ApiResponse(responseCode = "404", description = "Utilisateur non trouve",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<UserDTO> getById(@PathVariable Long id) {
         User user = userService.findById(id)
@@ -65,7 +71,8 @@ public class UserController {
     @Operation(summary = "Creer un utilisateur")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Utilisateur cree"),
-            @ApiResponse(responseCode = "400", description = "Requete invalide")
+            @ApiResponse(responseCode = "400", description = "Requete invalide",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<UserDTO> create(@Valid @RequestBody UserCreateDTO dto) {
         User created = userService.create(dto.getUsername(), dto.getEmail(), dto.getPassword());
@@ -80,8 +87,10 @@ public class UserController {
     @Operation(summary = "Mettre a jour un utilisateur")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Utilisateur mis a jour"),
-            @ApiResponse(responseCode = "400", description = "Requete invalide"),
-            @ApiResponse(responseCode = "404", description = "Utilisateur non trouve")
+            @ApiResponse(responseCode = "400", description = "Requete invalide",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Utilisateur non trouve",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<UserDTO> update(@PathVariable Long id, @Valid @RequestBody UserUpdateDTO dto) {
         User updated = userService.update(id, dto.getUsername(), dto.getEmail());
@@ -94,7 +103,10 @@ public class UserController {
     @Operation(summary = "Supprimer un utilisateur")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Utilisateur supprime"),
-            @ApiResponse(responseCode = "404", description = "Utilisateur non trouve")
+            @ApiResponse(responseCode = "403", description = "Operation interdite",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Utilisateur non trouve",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         userService.delete(id);
@@ -106,8 +118,10 @@ public class UserController {
     @Operation(summary = "Patch partiel d'un utilisateur")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Utilisateur mis a jour"),
-            @ApiResponse(responseCode = "400", description = "Requete invalide"),
-            @ApiResponse(responseCode = "404", description = "Utilisateur non trouve")
+            @ApiResponse(responseCode = "400", description = "Requete invalide",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Utilisateur non trouve",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<UserDTO> patch(@PathVariable Long id, @Valid @RequestBody UserPatchDTO dto) {
         User patched = userService.patch(id, dto);

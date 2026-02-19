@@ -1,6 +1,8 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -22,6 +24,7 @@ import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.mapper.
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.Category;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.service.CategoryService;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.dto.PaginatedResponse;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ErrorResponse;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ResourceNotFoundException;
 
 import java.net.URI;
@@ -38,7 +41,9 @@ public class CategoryController {
     @GetMapping
     @Operation(summary = "Lister les categories")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Liste des categories retournee")
+            @ApiResponse(responseCode = "200", description = "Liste des categories retournee"),
+            @ApiResponse(responseCode = "400", description = "Requete invalide",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<PaginatedResponse<CategoryDTO>> getAll(
             @RequestParam(defaultValue = "0") int page,
@@ -53,7 +58,8 @@ public class CategoryController {
     @Operation(summary = "Recuperer une categorie")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Categorie retournee"),
-            @ApiResponse(responseCode = "404", description = "Categorie non trouvee")
+            @ApiResponse(responseCode = "404", description = "Categorie non trouvee",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<CategoryDTO> getById(@PathVariable Long id) {
         Category category = categoryService.findById(id)
@@ -67,7 +73,10 @@ public class CategoryController {
     @Operation(summary = "Creer une categorie")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Categorie creee"),
-            @ApiResponse(responseCode = "400", description = "Requete invalide")
+            @ApiResponse(responseCode = "400", description = "Requete invalide",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Operation interdite",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<CategoryDTO> create(@Valid @RequestBody CategoryCreateDTO dto) {
         Category created = categoryService.create(dto.getLabel());
@@ -83,8 +92,12 @@ public class CategoryController {
     @Operation(summary = "Mettre a jour une categorie")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Categorie mise a jour"),
-            @ApiResponse(responseCode = "400", description = "Requete invalide"),
-            @ApiResponse(responseCode = "404", description = "Categorie non trouvee")
+            @ApiResponse(responseCode = "400", description = "Requete invalide",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Operation interdite",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Categorie non trouvee",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<CategoryDTO> update(@PathVariable Long id, @Valid @RequestBody CategoryUpdateDTO dto) {
         Category updated = categoryService.update(id, dto.getLabel());
@@ -97,7 +110,12 @@ public class CategoryController {
     @Operation(summary = "Supprimer une categorie")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Categorie supprimee"),
-            @ApiResponse(responseCode = "404", description = "Categorie non trouvee")
+            @ApiResponse(responseCode = "403", description = "Operation interdite",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Categorie non trouvee",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "Conflit metier",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         categoryService.delete(id);
@@ -110,8 +128,12 @@ public class CategoryController {
     @Operation(summary = "Patch partiel d'une categorie")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Categorie mise a jour"),
-            @ApiResponse(responseCode = "400", description = "Requete invalide"),
-            @ApiResponse(responseCode = "404", description = "Categorie non trouvee")
+            @ApiResponse(responseCode = "400", description = "Requete invalide",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Operation interdite",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Categorie non trouvee",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<CategoryDTO> patch(@PathVariable Long id, @Valid @RequestBody CategoryPatchDTO dto) {
         Category patched = categoryService.patch(id, dto);

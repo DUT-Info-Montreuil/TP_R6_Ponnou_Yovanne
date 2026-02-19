@@ -1,10 +1,15 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.List;
 
+@Schema(description = "Format standard des erreurs API")
 public class ErrorResponse {
 
+    @Schema(description = "Code d'erreur applicatif", example = "VALIDATION_ERROR")
     private String error;
+    @Schema(description = "Liste de messages d'erreur", example = "[\"title: title is required\"]")
     private List<String> messages;
 
     public ErrorResponse() {

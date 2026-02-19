@@ -1,13 +1,21 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.List;
 
+@Schema(description = "Reponse paginee")
 public class PaginatedResponse<T> {
 
+    @Schema(description = "Elements de la page courante")
     private List<T> items;
+    @Schema(description = "Numero de page", example = "0")
     private int page;
+    @Schema(description = "Taille de la page", example = "10")
     private int size;
+    @Schema(description = "Nombre total d'elements", example = "42")
     private long totalItems;
+    @Schema(description = "Nombre total de pages", example = "5")
     private int totalPages;
 
     public PaginatedResponse() {
