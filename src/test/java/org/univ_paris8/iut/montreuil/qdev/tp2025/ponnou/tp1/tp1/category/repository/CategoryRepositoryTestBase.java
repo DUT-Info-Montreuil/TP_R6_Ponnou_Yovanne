@@ -1,42 +1,26 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.repository;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.Category;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-
+@DataJpaTest
 abstract class CategoryRepositoryTestBase {
 
-    protected static EntityManagerFactory emf;
-    protected EntityManager em;
+    @Autowired
     protected CategoryRepository categoryRepository;
 
-    @BeforeAll
-    static void setUpFactory() {
-        emf = Persistence.createEntityManagerFactory("MasterAnnoncePU");
-    }
+    @Autowired
+    protected TestEntityManager entityManager;
 
-    @AfterAll
-    static void tearDownFactory() {
-        if (emf != null) emf.close();
-    }
+    protected Category existing;
 
     @BeforeEach
-    void setUp() {
-        em = emf.createEntityManager();
-        categoryRepository = new CategoryRepository();
-    }
-
-    @AfterEach
-    void tearDown() {
-        if (em.getTransaction().isActive()) {
-            em.getTransaction().rollback();
-        }
-        em.getTransaction().begin();
-        em.createQuery("DELETE FROM Annonce").executeUpdate();
-        em.createQuery("DELETE FROM Category").executeUpdate();
-        em.getTransaction().commit();
-        em.close();
+    void setUpBase() {
+        existing = new Category("Immobilier");
+        entityManager.persist(existing);
+        entityManager.flush();
     }
 }

@@ -1,109 +1,93 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.service;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.config.PasswordUtils;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ResourceNotFoundException;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class AuthFindDeleteUserServiceTest extends UserServiceTestBase {
 
     @Test
-    @DisplayName("authenticate() retourne l'utilisateur avec les bons identifiants")
-    void authenticate_shouldReturnUser_whenCredentialsValid() {
-        User dave = new User("dave", "dave@test.com", PasswordUtils.hash("secret123"));
-        dave.setId(1L);
+    @DisplayName("authenticate_shouldReturnUser_whenValid")
+    void authenticate_shouldReturnUser_whenValid() {
+        User user = new User("john", "john@test.com", PasswordUtils.hash("secret"));
+        when(userRepository.findByUsername("john")).thenReturn(Optional.of(user));
 
-        when(userRepository.findOneWithFilters(eq(em), eq(Map.of("username", "dave"))))
-                .thenReturn(Optional.of(dave));
-
-        Optional<User> result = userService.authenticate("dave", "secret123");
+        Optional<User> result = userService.authenticate("john", "secret");
 
         assertTrue(result.isPresent());
-        assertEquals("dave", result.get().getUsername());
     }
 
     @Test
-    @DisplayName("authenticate() retourne vide avec un mauvais mot de passe")
+    @DisplayName("authenticate_shouldReturnEmpty_whenWrongPassword")
     void authenticate_shouldReturnEmpty_whenWrongPassword() {
-        User dave = new User("dave", "dave@test.com", PasswordUtils.hash("secret123"));
-        dave.setId(1L);
+        User user = new User("john", "john@test.com", PasswordUtils.hash("secret"));
+        when(userRepository.findByUsername("john")).thenReturn(Optional.of(user));
 
-        when(userRepository.findOneWithFilters(eq(em), eq(Map.of("username", "dave"))))
-                .thenReturn(Optional.of(dave));
-
-        Optional<User> result = userService.authenticate("dave", "wrongpassword");
+        Optional<User> result = userService.authenticate("john", "wrong");
 
         assertTrue(result.isEmpty());
     }
 
     @Test
-    @DisplayName("authenticate() retourne vide avec un username inconnu")
-    void authenticate_shouldReturnEmpty_whenUnknownUsername() {
-        when(userRepository.findOneWithFilters(eq(em), eq(Map.of("username", "inconnu"))))
-                .thenReturn(Optional.empty());
+    @DisplayName("authenticate_shouldReturnEmpty_whenUserNotFound")
+    void authenticate_shouldReturnEmpty_whenUserNotFound() {
+        when(userRepository.findByUsername("missing")).thenReturn(Optional.empty());
 
-        Optional<User> result = userService.authenticate("inconnu", "password");
-
-        assertTrue(result.isEmpty());
+        assertTrue(userService.authenticate("missing", "secret").isEmpty());
     }
 
     @Test
-    @DisplayName("findById() retourne l'utilisateur existant")
-    void findById_shouldReturnUser() {
-        User frank = new User("frank", "frank@test.com", "password123");
-        frank.setId(1L);
-
-        when(userRepository.findById(em, 1L)).thenReturn(Optional.of(frank));
-
-        Optional<User> found = userService.findById(1L);
-
-        assertTrue(found.isPresent());
-        assertEquals("frank", found.get().getUsername());
-    }
-
-    @Test
-    @DisplayName("findByUsername() retourne l'utilisateur par nom")
-    void findByUsername_shouldReturnUser() {
-        User grace = new User("grace", "grace@test.com", "password123");
-
-        when(userRepository.findOneWithFilters(eq(em), eq(Map.of("username", "grace"))))
-                .thenReturn(Optional.of(grace));
-
-        Optional<User> found = userService.findByUsername("grace");
-
-        assertTrue(found.isPresent());
-        assertEquals("grace@test.com", found.get().getEmail());
-    }
-
-    @Test
-    @DisplayName("findAll() retourne tous les utilisateurs")
-    void findAll_shouldReturnAllUsers() {
-        when(userRepository.findWithFilters(eq(em), isNull(), isNull(), isNull(),
-                eq("createdAt DESC"), isNull()))
-                .thenReturn(List.of(
-                        new User("u1", "u1@t.com", "p"),
-                        new User("u2", "u2@t.com", "p"),
-                        new User("u3", "u3@t.com", "p")));
-
-        List<User> users = userService.findAll();
-
-        assertEquals(3, users.size());
-    }
-
-    @Test
-    @DisplayName("delete() supprime l'utilisateur")
-    void delete_shouldRemoveUser() {
-        when(userRepository.deleteById(em, 1L)).thenReturn(true);
+    @DisplayName("delete_shouldDelete_whenExists")
+    void delete_shouldDelete_whenExists() {
+        when(userRepository.existsById(1L)).thenReturn(true);
 
         userService.delete(1L);
 
-        verify(userRepository).deleteById(em, 1L);
-        verify(tx).commit();
+        verify(userRepository).deleteById(1L);
+    }
+
+    @Test
+    @DisplayName("delete_shouldThrow_whenNotFound")
+    void delete_shouldThrow_whenNotFound() {
+        when(userRepository.existsById(404L)).thenReturn(false);
+
+        assertThrows(ResourceNotFoundException.class, () -> userService.delete(404L));
+    }
+
+    @Test
+    @DisplayName("findById_shouldReturnUser")
+    void findById_shouldReturnUser() {
+        User user = new User("john", "john@test.com", "pwd");
+        user.setId(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        Optional<User> result = userService.findById(1L);
+
+        assertTrue(result.isPresent());
+        assertEquals("john", result.get().getUsername());
+    }
+
+    @Test
+    @DisplayName("findAllPaginated_shouldReturnPage")
+    void findAllPaginated_shouldReturnPage() {
+        User user = new User("john", "john@test.com", "pwd");
+        when(userRepository.findAll(PageRequest.of(0, 10))).thenReturn(new PageImpl<>(List.of(user)));
+
+        var page = userService.findAllPaginated(PageRequest.of(0, 10));
+
+        assertEquals(1, page.getTotalElements());
     }
 }

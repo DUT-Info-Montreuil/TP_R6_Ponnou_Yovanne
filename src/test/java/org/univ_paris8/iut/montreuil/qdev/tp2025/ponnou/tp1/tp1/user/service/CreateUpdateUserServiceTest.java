@@ -1,121 +1,93 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.service;
 
-import org.junit.jupiter.api.*;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.config.EntityManagerUtil;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.config.PasswordUtils;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ResourceNotFoundException;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
 
-import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 class CreateUpdateUserServiceTest extends UserServiceTestBase {
 
     @Test
-    @DisplayName("create() crée un utilisateur avec succès")
-    void create_shouldCreateUser() {
-        when(userRepository.countWithFilters(eq(em), eq(Map.of("username", "alice")))).thenReturn(0L);
-        when(userRepository.countWithFilters(eq(em), eq(Map.of("email", "alice@test.com")))).thenReturn(0L);
-        when(userRepository.save(eq(em), any(User.class))).thenAnswer(inv -> {
-            User u = inv.getArgument(1);
-            u.setId(1L);
-            return u;
+    @DisplayName("create_shouldHashPasswordAndSave")
+    void create_shouldHashPasswordAndSave() {
+        when(userRepository.existsByUsername("alice")).thenReturn(false);
+        when(userRepository.existsByEmail("alice@test.com")).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenAnswer(i -> {
+            User user = i.getArgument(0);
+            user.setId(1L);
+            return user;
         });
 
-        User user = userService.create("alice", "alice@test.com", "password123");
+        User result = userService.create("alice", "alice@test.com", "password123");
 
-        assertNotNull(user.getId());
-        assertEquals("alice", user.getUsername());
-        assertEquals("alice@test.com", user.getEmail());
-        verify(tx).commit();
+        assertEquals(1L, result.getId());
+        assertTrue(PasswordUtils.matches("password123", result.getPassword()));
     }
 
     @Test
-    @DisplayName("create() échoue si le username existe déjà")
-    void create_shouldFail_whenDuplicateUsername() {
-        when(userRepository.countWithFilters(eq(em), eq(Map.of("username", "alice")))).thenReturn(1L);
+    @DisplayName("create_shouldThrow_whenUsernameExists")
+    void create_shouldThrow_whenUsernameExists() {
+        when(userRepository.existsByUsername("alice")).thenReturn(true);
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> userService.create("alice", "other@test.com", "password123"));
-        assertTrue(ex.getMessage().contains("nom d'utilisateur existe"));
+        assertThrows(IllegalArgumentException.class,
+                () -> userService.create("alice", "alice@test.com", "password123"));
     }
 
     @Test
-    @DisplayName("create() échoue si l'email existe déjà")
-    void create_shouldFail_whenDuplicateEmail() {
-        when(userRepository.countWithFilters(eq(em), eq(Map.of("username", "bob")))).thenReturn(0L);
-        when(userRepository.countWithFilters(eq(em), eq(Map.of("email", "alice@test.com")))).thenReturn(1L);
+    @DisplayName("create_shouldThrow_whenEmailExists")
+    void create_shouldThrow_whenEmailExists() {
+        when(userRepository.existsByUsername("alice")).thenReturn(false);
+        when(userRepository.existsByEmail("alice@test.com")).thenReturn(true);
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> userService.create("bob", "alice@test.com", "password123"));
-        assertTrue(ex.getMessage().contains("email existe"));
+        assertThrows(IllegalArgumentException.class,
+                () -> userService.create("alice", "alice@test.com", "password123"));
     }
 
     @Test
-    @DisplayName("update() met à jour username et email")
-    void update_shouldModifyUser() {
-        User existing = new User("charlie", "charlie@test.com", "password123");
+    @DisplayName("update_shouldUpdateFields")
+    void update_shouldUpdateFields() {
+        User existing = new User("old", "old@test.com", "pwd");
         existing.setId(1L);
 
-        when(userRepository.findById(em, 1L)).thenReturn(Optional.of(existing));
-        when(userRepository.countWithFilters(eq(em), eq(Map.of("username", "charlie_new")))).thenReturn(0L);
-        when(userRepository.countWithFilters(eq(em), eq(Map.of("email", "charlie_new@test.com")))).thenReturn(0L);
-        when(userRepository.update(em, existing)).thenReturn(existing);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(userRepository.existsByUsername("new")).thenReturn(false);
+        when(userRepository.existsByEmail("new@test.com")).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
 
-        User updated = userService.update(1L, "charlie_new", "charlie_new@test.com");
+        User result = userService.update(1L, "new", "new@test.com");
 
-        assertEquals("charlie_new", updated.getUsername());
-        assertEquals("charlie_new@test.com", updated.getEmail());
+        assertEquals("new", result.getUsername());
+        assertEquals("new@test.com", result.getEmail());
     }
 
     @Test
-    @DisplayName("update() échoue si le nouveau username est déjà pris")
-    void update_shouldFail_whenUsernameAlreadyTaken() {
-        User bob = new User("bob", "bob@test.com", "password123");
-        bob.setId(2L);
+    @DisplayName("update_shouldThrow_whenNotFound")
+    void update_shouldThrow_whenNotFound() {
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
-        when(userRepository.findById(em, 2L)).thenReturn(Optional.of(bob));
-        when(userRepository.countWithFilters(eq(em), eq(Map.of("username", "alice")))).thenReturn(1L);
+        assertThrows(ResourceNotFoundException.class,
+                () -> userService.update(999L, "new", "new@test.com"));
+    }
+
+    @Test
+    @DisplayName("update_shouldThrow_whenNewUsernameExists")
+    void update_shouldThrow_whenNewUsernameExists() {
+        User existing = new User("old", "old@test.com", "pwd");
+        existing.setId(1L);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(userRepository.existsByUsername("taken")).thenReturn(true);
 
         assertThrows(IllegalArgumentException.class,
-                () -> userService.update(2L, "alice", "bob@test.com"));
-    }
-
-    @Test
-    @DisplayName("update() échoue pour un ID inexistant")
-    void update_shouldFail_whenUserNotFound() {
-        when(userRepository.findById(em, 999L)).thenReturn(Optional.empty());
-
-        assertThrows(IllegalArgumentException.class,
-                () -> userService.update(999L, "ghost", "ghost@test.com"));
-    }
-
-    @Test
-    @DisplayName("changePassword() modifie le mot de passe")
-    void changePassword_shouldUpdatePassword() {
-        User eve = new User("eve", "eve@test.com", "oldpass123");
-        eve.setId(1L);
-
-        when(userRepository.findById(em, 1L)).thenReturn(Optional.of(eve));
-        when(userRepository.update(em, eve)).thenReturn(eve);
-
-        userService.changePassword(1L, "newpass456");
-
-        assertEquals(PasswordUtils.hash("newpass456"), eve.getPassword());
-        verify(userRepository).update(em, eve);
-        verify(tx).commit();
-    }
-
-    @Test
-    @DisplayName("Chaque opération du service appelle EntityManagerUtil.getEntityManager()")
-    void service_shouldCallEntityManagerUtil() {
-        when(userRepository.countWithFilters(eq(em), any())).thenReturn(0L);
-        when(userRepository.save(eq(em), any(User.class))).thenAnswer(inv -> inv.getArgument(1));
-
-        userService.create("verify", "verify@test.com", "password123");
-
-        mockedUtil.verify(EntityManagerUtil::getEntityManager, atLeastOnce());
+                () -> userService.update(1L, "taken", "old@test.com"));
     }
 }

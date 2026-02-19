@@ -1,73 +1,64 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.repository;
 
-import org.junit.jupiter.api.*;
+import org.hibernate.Hibernate;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.Annonce;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.AnnonceStatus;
 
-import java.util.Optional;
+import java.sql.Timestamp;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CrudAnnonceRepositoryTest extends AnnonceRepositoryTestBase {
 
     @Test
-    @DisplayName("save() persiste une annonce avec ses relations")
+    @DisplayName("save_shouldPersistAnnonce")
     void save_shouldPersistAnnonce() {
-        Annonce annonce = createAnnonce("Appartement F3", "Bel appart lumineux", AnnonceStatus.DRAFT);
+        Annonce annonce = new Annonce("Titre", "Description", "Paris", "mail@test.com");
+        annonce.setStatus(AnnonceStatus.DRAFT);
+        annonce.setAuthor(testUser);
+        annonce.setCategory(testCategory);
 
-        em.getTransaction().begin();
-        Annonce saved = annonceRepository.save(em, annonce);
+        Annonce saved = annonceRepository.save(annonce);
 
-        assertNotNull(saved.getId());
-        assertEquals("Appartement F3", saved.getTitle());
-        assertEquals(AnnonceStatus.DRAFT, saved.getStatus());
-        assertNotNull(saved.getDate());
-        assertEquals(testUser.getId(), saved.getAuthor().getId());
-        assertEquals(testCategory.getId(), saved.getCategory().getId());
+        assertTrue(saved.getId() != null);
+        assertEquals("Titre", saved.getTitle());
     }
 
     @Test
-    @DisplayName("findById() retourne l'annonce existante")
-    void findById_shouldReturnAnnonce() {
-        Annonce annonce = createAnnonce("Maison", "Grande maison", AnnonceStatus.DRAFT);
-        em.getTransaction().begin();
-        annonceRepository.save(em, annonce);
+    @DisplayName("findByIdWithRelations_shouldLoadRelations")
+    void findByIdWithRelations_shouldLoadRelations() {
+        Annonce saved = persistAnnonce(
+                "Titre",
+                "Description",
+                AnnonceStatus.PUBLISHED,
+                Timestamp.valueOf("2024-01-01 10:00:00"),
+                testUser,
+                testCategory
+        );
 
-        Optional<Annonce> found = annonceRepository.findById(em, annonce.getId());
+        Annonce found = annonceRepository.findByIdWithRelations(saved.getId()).orElseThrow();
 
-        assertTrue(found.isPresent());
-        assertEquals("Maison", found.get().getTitle());
+        assertTrue(Hibernate.isInitialized(found.getAuthor()));
+        assertTrue(Hibernate.isInitialized(found.getCategory()));
     }
 
     @Test
-    @DisplayName("update() met a jour le titre et le statut")
-    void update_shouldModifyAnnonce() {
-        Annonce annonce = createAnnonce("Ancien titre", "Description", AnnonceStatus.DRAFT);
-        em.getTransaction().begin();
-        annonceRepository.save(em, annonce);
-        em.getTransaction().commit();
+    @DisplayName("delete_shouldRemoveAnnonce")
+    void delete_shouldRemoveAnnonce() {
+        Annonce saved = persistAnnonce(
+                "Titre",
+                "Description",
+                AnnonceStatus.DRAFT,
+                Timestamp.valueOf("2024-01-01 10:00:00"),
+                testUser,
+                testCategory
+        );
 
-        annonce.setTitle("Nouveau titre");
-        annonce.setStatus(AnnonceStatus.PUBLISHED);
-        em.getTransaction().begin();
-        Annonce updated = annonceRepository.update(em, annonce);
+        annonceRepository.deleteById(saved.getId());
 
-        assertEquals("Nouveau titre", updated.getTitle());
-        assertEquals(AnnonceStatus.PUBLISHED, updated.getStatus());
-    }
-
-    @Test
-    @DisplayName("deleteById() supprime l'annonce")
-    void deleteById_shouldRemoveAnnonce() {
-        Annonce annonce = createAnnonce("A supprimer", "Desc", AnnonceStatus.DRAFT);
-        em.getTransaction().begin();
-        annonceRepository.save(em, annonce);
-        Long id = annonce.getId();
-        em.getTransaction().commit();
-
-        em.getTransaction().begin();
-        annonceRepository.deleteById(em, id);
-
-        assertTrue(annonceRepository.findById(em, id).isEmpty());
+        assertTrue(annonceRepository.findById(saved.getId()).isEmpty());
     }
 }

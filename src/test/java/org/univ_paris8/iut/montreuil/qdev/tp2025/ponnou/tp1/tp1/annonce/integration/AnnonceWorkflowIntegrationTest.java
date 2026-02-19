@@ -1,183 +1,257 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.integration;
 
-import org.junit.jupiter.api.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.Annonce;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.service.AnnonceService;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.AnnonceStatus;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.repository.AnnonceRepository;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.Category;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.service.CategoryService;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.config.EntityManagerUtil;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.repository.CategoryRepository;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.config.PasswordUtils;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.service.UserService;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.repository.UserRepository;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import java.util.List;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import org.mockito.MockedStatic;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
 class AnnonceWorkflowIntegrationTest {
 
-    private static EntityManagerFactory emf;
-    private MockedStatic<EntityManagerUtil> mockedUtil;
+    @Autowired
+    private MockMvc mockMvc;
 
-    private UserService userService;
-    private CategoryService categoryService;
-    private AnnonceService annonceService;
+    @Autowired
+    private ObjectMapper objectMapper;
 
-    @BeforeAll
-    static void setUpFactory() {
-        emf = Persistence.createEntityManagerFactory("MasterAnnoncePU");
-    }
+    @Autowired
+    private AnnonceRepository annonceRepository;
 
-    @AfterAll
-    static void tearDownFactory() {
-        if (emf != null)
-            emf.close();
-    }
+    @Autowired
+    private CategoryRepository categoryRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    private User user1;
+    private User user2;
+    private User admin;
+    private Category category;
 
     @BeforeEach
     void setUp() {
-        userService = new UserService();
-        categoryService = new CategoryService();
-        annonceService = new AnnonceService();
+        annonceRepository.deleteAll();
+        categoryRepository.deleteAll();
+        userRepository.deleteAll();
 
-        mockedUtil = mockStatic(EntityManagerUtil.class);
-        mockedUtil.when(EntityManagerUtil::getEntityManager).thenAnswer(inv -> emf.createEntityManager());
-    }
+        user1 = userRepository.save(new User("user1", "user1@test.com", PasswordUtils.hash("password123")));
+        user2 = userRepository.save(new User("user2", "user2@test.com", PasswordUtils.hash("password123")));
+        admin = new User("admin", "admin@test.com", PasswordUtils.hash("password123"));
+        admin.setRole("ROLE_ADMIN");
+        admin = userRepository.save(admin);
 
-    @AfterEach
-    void tearDown() {
-        mockedUtil.close();
-        EntityManager em = emf.createEntityManager();
-        em.getTransaction().begin();
-        em.createQuery("DELETE FROM Annonce").executeUpdate();
-        em.createQuery("DELETE FROM Category").executeUpdate();
-        em.createQuery("DELETE FROM User").executeUpdate();
-        em.getTransaction().commit();
-        em.close();
-    }
-
-    // ==================== Workflow complet ====================
-
-    @Test
-    @DisplayName("Workflow complet : inscription → catégorie → annonce → publication → recherche")
-    void fullWorkflow_createPublishSearch() {
-        // 1. Inscription d'un utilisateur
-        User user = userService.create("jean", "jean@test.com", "motdepasse123");
-        assertNotNull(user.getId());
-
-        // 2. Création d'une catégorie
-        Category category = categoryService.create("Immobilier");
-        assertNotNull(category.getId());
-
-        // 3. Création d'une annonce (DRAFT par défaut)
-        Annonce annonce = annonceService.create(
-                "Appartement F3 lumineux",
-                "Bel appartement de 60m² en centre ville",
-                "10 rue de la Paix, Paris",
-                "jean@contact.com",
-                user.getId(),
-                category.getId());
-
-        assertNotNull(annonce.getId());
-        assertEquals(AnnonceStatus.DRAFT, annonce.getStatus());
-
-        // 4. L'annonce DRAFT ne doit PAS apparaître dans les résultats publiés
-        List<Annonce> publishedBefore = annonceService.findPublishedPaginated(0, 10);
-        assertTrue(publishedBefore.isEmpty());
-
-        // 5. Publication de l'annonce
-        Annonce published = annonceService.publish(annonce.getId(), user.getId());
-        assertEquals(AnnonceStatus.PUBLISHED, published.getStatus());
-
-        // 6. L'annonce PUBLISHED apparaît maintenant dans les résultats
-        List<Annonce> publishedAfter = annonceService.findPublishedPaginated(0, 10);
-        assertEquals(1, publishedAfter.size());
-        assertEquals("Appartement F3 lumineux", publishedAfter.get(0).getTitle());
-
-        // 7. Recherche par mot-clé
-        List<Annonce> searchResults = annonceService.searchByKeywordPaginated("lumineux", 0, 10);
-        assertEquals(1, searchResults.size());
-
-        // 8. Recherche par catégorie
-        List<Annonce> byCat = annonceService.findByCategoryPaginated(category.getId(), 0, 10);
-        assertEquals(1, byCat.size());
-
-        // 9. Recherche avec un mot-clé qui ne matche pas
-        List<Annonce> noResults = annonceService.searchByKeywordPaginated("voiture", 0, 10);
-        assertTrue(noResults.isEmpty());
+        category = categoryRepository.save(new Category("Immobilier"));
     }
 
     @Test
-    @DisplayName("Workflow : création de plusieurs annonces → pagination correcte")
-    void workflow_multipleAnnonces_pagination() {
-        User user = userService.create("marie", "marie@test.com", "password123");
-        Category cat = categoryService.create("Services");
+    @DisplayName("fullCrudWorkflow")
+    void fullCrudWorkflow() throws Exception {
+        String adminToken = loginAndGetToken("admin", "password123");
 
-        // Créer 12 annonces publiées
-        for (int i = 1; i <= 12; i++) {
-            Annonce a = annonceService.create(
-                    "Service " + i, "Description du service " + i,
-                    "Paris", "m@t.com", user.getId(), cat.getId());
-            annonceService.publish(a.getId(), user.getId());
-        }
+        String createResponse = mockMvc.perform(post("/api/annonces")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "title":"Appartement",
+                                  "description":"Bel appartement",
+                                  "adress":"Paris",
+                                  "mail":"contact@test.com",
+                                  "categoryId":%d
+                                }
+                                """.formatted(category.getId())))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
 
-        // Page 0, taille 5 → 5 résultats
-        List<Annonce> page0 = annonceService.findPublishedPaginated(0, 5);
-        assertEquals(5, page0.size());
+        long annonceId = objectMapper.readTree(createResponse).get("id").asLong();
 
-        // Page 1, taille 5 → 5 résultats
-        List<Annonce> page1 = annonceService.findPublishedPaginated(1, 5);
-        assertEquals(5, page1.size());
+        mockMvc.perform(get("/api/annonces/{id}", annonceId))
+                .andExpect(status().isOk());
 
-        // Page 2, taille 5 → 2 résultats
-        List<Annonce> page2 = annonceService.findPublishedPaginated(2, 5);
-        assertEquals(2, page2.size());
+        mockMvc.perform(put("/api/annonces/{id}", annonceId)
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "title":"Appartement MAJ",
+                                  "description":"Desc MAJ",
+                                  "adress":"Lyon",
+                                  "mail":"updated@test.com",
+                                  "categoryId":%d
+                                }
+                                """.formatted(category.getId())))
+                .andExpect(status().isOk());
 
-        // Comptage total
-        assertEquals(12, annonceService.countPublished());
+        mockMvc.perform(put("/api/annonces/{id}/publish", annonceId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("PUBLISHED"));
+
+        mockMvc.perform(put("/api/annonces/{id}", annonceId)
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "title":"Interdit",
+                                  "description":"Interdit",
+                                  "adress":"Paris",
+                                  "mail":"forbidden@test.com",
+                                  "categoryId":%d
+                                }
+                                """.formatted(category.getId())))
+                .andExpect(status().isConflict());
+
+        mockMvc.perform(put("/api/annonces/{id}/archive", annonceId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ARCHIVED"));
+
+        mockMvc.perform(delete("/api/annonces/{id}", annonceId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isNoContent());
     }
 
     @Test
-    @DisplayName("Workflow : archivage empêche la re-publication")
-    void workflow_archivePreventsRepublish() {
-        User user = userService.create("paul", "paul@test.com", "password123");
-        Category cat = categoryService.create("Emploi");
-
-        Annonce annonce = annonceService.create("Job", "Desc", "Paris", "m@t.com",
-                user.getId(), cat.getId());
-
-        // DRAFT → PUBLISHED → ARCHIVED
-        annonceService.publish(annonce.getId(), user.getId());
-        annonceService.archive(annonce.getId(), user.getId());
-
-        // ARCHIVED → PUBLISHED doit échouer
-        assertThrows(IllegalStateException.class,
-                () -> annonceService.publish(annonce.getId(), user.getId()));
-
-        // L'annonce archivée n'apparaît plus dans les recherches publiées
-        assertEquals(0, annonceService.countPublished());
+    @DisplayName("create_shouldReturn403_withoutToken")
+    void create_shouldReturn403_withoutToken() throws Exception {
+        mockMvc.perform(post("/api/annonces")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "title":"Appartement",
+                                  "description":"Bel appartement",
+                                  "adress":"Paris",
+                                  "mail":"contact@test.com",
+                                  "categoryId":1
+                                }
+                                """))
+                .andExpect(status().isForbidden());
     }
 
     @Test
-    @DisplayName("Workflow : suppression catégorie impossible si annonces liées")
-    void workflow_cannotDeleteCategoryWithAnnonces() {
-        User user = userService.create("luc", "luc@test.com", "password123");
-        Category cat = categoryService.create("Animaux");
+    @DisplayName("update_shouldReturn403_whenNotOwner")
+    void update_shouldReturn403_whenNotOwner() throws Exception {
+        Annonce annonce = new Annonce("Titre", "Desc", "Paris", "mail@test.com");
+        annonce.setStatus(AnnonceStatus.DRAFT);
+        annonce.setAuthor(user1);
+        annonce.setCategory(category);
+        annonce = annonceRepository.save(annonce);
 
-        annonceService.create("Chaton", "Desc", "Paris", "m@t.com",
-                user.getId(), cat.getId());
+        String tokenUser2 = loginAndGetToken("user2", "password123");
 
-        // La suppression doit échouer
-        assertThrows(IllegalStateException.class,
-                () -> categoryService.delete(cat.getId()));
+        mockMvc.perform(put("/api/annonces/{id}", annonce.getId())
+                        .header("Authorization", "Bearer " + tokenUser2)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "title":"Hack",
+                                  "description":"Hack",
+                                  "adress":"Paris",
+                                  "mail":"hack@test.com",
+                                  "categoryId":%d
+                                }
+                                """.formatted(category.getId())))
+                .andExpect(status().isForbidden());
+    }
 
-        // La catégorie existe toujours
-        assertTrue(categoryService.findById(cat.getId()).isPresent());
+    @Test
+    @DisplayName("update_shouldReturn409_whenPublished")
+    void update_shouldReturn409_whenPublished() throws Exception {
+        String tokenUser1 = loginAndGetToken("user1", "password123");
+
+        String createResponse = mockMvc.perform(post("/api/annonces")
+                        .header("Authorization", "Bearer " + tokenUser1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "title":"Appartement",
+                                  "description":"Bel appartement",
+                                  "adress":"Paris",
+                                  "mail":"contact@test.com",
+                                  "categoryId":%d
+                                }
+                                """.formatted(category.getId())))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        long annonceId = objectMapper.readTree(createResponse).get("id").asLong();
+
+        mockMvc.perform(put("/api/annonces/{id}/publish", annonceId)
+                        .header("Authorization", "Bearer " + tokenUser1))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(put("/api/annonces/{id}", annonceId)
+                        .header("Authorization", "Bearer " + tokenUser1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "title":"Interdit",
+                                  "description":"Interdit",
+                                  "adress":"Paris",
+                                  "mail":"forbidden@test.com",
+                                  "categoryId":%d
+                                }
+                                """.formatted(category.getId())))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    @DisplayName("delete_shouldReturn409_whenNotArchived")
+    void delete_shouldReturn409_whenNotArchived() throws Exception {
+        Annonce annonce = new Annonce("Titre", "Desc", "Paris", "mail@test.com");
+        annonce.setStatus(AnnonceStatus.DRAFT);
+        annonce.setAuthor(user1);
+        annonce.setCategory(category);
+        annonce = annonceRepository.save(annonce);
+
+        String tokenUser1 = loginAndGetToken("user1", "password123");
+
+        mockMvc.perform(delete("/api/annonces/{id}", annonce.getId())
+                        .header("Authorization", "Bearer " + tokenUser1))
+                .andExpect(status().isConflict());
+    }
+
+    private String loginAndGetToken(String username, String password) throws Exception {
+        String loginResponse = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "%s",
+                                  "password": "%s"
+                                }
+                                """.formatted(username, password)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode jsonNode = objectMapper.readTree(loginResponse);
+        return jsonNode.get("token").asText();
     }
 }

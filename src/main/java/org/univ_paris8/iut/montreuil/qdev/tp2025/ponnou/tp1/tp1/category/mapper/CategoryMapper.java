@@ -11,7 +11,7 @@ import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.C
 
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper
 public interface CategoryMapper {
 
     CategoryDTO toDTO(Category entity);

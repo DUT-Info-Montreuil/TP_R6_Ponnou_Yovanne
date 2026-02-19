@@ -153,11 +153,35 @@
                     <testIncludes>
                         <testInclude>**/annonce/repository/AnnonceRepositoryTestBase.java</testInclude>
                         <testInclude>**/annonce/repository/SearchAnnonceRepositoryTest.java</testInclude>
+                        <testInclude>**/annonce/repository/CrudAnnonceRepositoryTest.java</testInclude>
                         <testInclude>**/annonce/service/AnnonceServiceTestBase.java</testInclude>
                         <testInclude>**/annonce/service/SearchAnnonceServiceTest.java</testInclude>
+                        <testInclude>**/annonce/service/CreateAnnonceServiceTest.java</testInclude>
+                        <testInclude>**/annonce/service/PublishArchiveAnnonceServiceTest.java</testInclude>
+                        <testInclude>**/annonce/service/UpdateDeleteAnnonceServiceTest.java</testInclude>
                         <testInclude>**/annonce/controller/AnnonceControllerRestTestBase.java</testInclude>
                         <testInclude>**/annonce/controller/GetAnnonceControllerRestTest.java</testInclude>
+                        <testInclude>**/annonce/controller/CreateAnnonceControllerRestTest.java</testInclude>
+                        <testInclude>**/annonce/controller/UpdateAnnonceControllerRestTest.java</testInclude>
+                        <testInclude>**/annonce/controller/DeleteAnnonceControllerRestTest.java</testInclude>
+                        <testInclude>**/annonce/controller/PatchAnnonceControllerRestTest.java</testInclude>
+                        <testInclude>**/annonce/controller/PublishAnnonceControllerRestTest.java</testInclude>
+                        <testInclude>**/annonce/controller/ArchiveAnnonceControllerRestTest.java</testInclude>
+                        <testInclude>**/annonce/integration/AnnonceWorkflowIntegrationTest.java</testInclude>
+                        <testInclude>**/annonce/mappers/AnnonceMapperTest.java</testInclude>
+                        <testInclude>**/category/repository/CategoryRepositoryTestBase.java</testInclude>
+                        <testInclude>**/category/repository/CrudCategoryRepositoryTest.java</testInclude>
+                        <testInclude>**/category/service/CategoryServiceTestBase.java</testInclude>
+                        <testInclude>**/category/service/CreateUpdateCategoryServiceTest.java</testInclude>
+                        <testInclude>**/category/service/FindDeleteCategoryServiceTest.java</testInclude>
                         <testInclude>**/category/controller/CategorySecurityControllerRestTest.java</testInclude>
+                        <testInclude>**/category/mapper/CategoryMapperTest.java</testInclude>
+                        <testInclude>**/user/repository/UserRepositoryTestBase.java</testInclude>
+                        <testInclude>**/user/repository/CrudUserRepositoryTest.java</testInclude>
+                        <testInclude>**/user/service/UserServiceTestBase.java</testInclude>
+                        <testInclude>**/user/service/CreateUpdateUserServiceTest.java</testInclude>
+                        <testInclude>**/user/service/AuthFindDeleteUserServiceTest.java</testInclude>
+                        <testInclude>**/user/mapper/UserMapperTest.java</testInclude>
                         <testInclude>**/auth/controller/AuthControllerRestTestBase.java</testInclude>
                         <testInclude>**/auth/controller/LoginAuthControllerRestTest.java</testInclude>
                         <testInclude>**/auth/integration/AuthFlowIntegrationTest.java</testInclude>

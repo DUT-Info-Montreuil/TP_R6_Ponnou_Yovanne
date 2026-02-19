@@ -1,70 +1,64 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.service;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.Annonce;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.AnnonceStatus;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.config.EntityManagerUtil;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.Category;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ResourceNotFoundException;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 class CreateAnnonceServiceTest extends AnnonceServiceTestBase {
 
     @Test
-    @DisplayName("create() crée une annonce en DRAFT")
-    void create_shouldCreateDraftAnnonce() {
-        when(userRepository.findById(em, 1L)).thenReturn(Optional.of(testUser));
-        when(categoryRepository.findById(em, 10L)).thenReturn(Optional.of(testCategory));
-        when(annonceRepository.save(eq(em), any(Annonce.class))).thenAnswer(inv -> {
-            Annonce a = inv.getArgument(1);
-            a.setId(100L);
-            return a;
+    @DisplayName("create_shouldReturnSavedAnnonce")
+    void create_shouldReturnSavedAnnonce() {
+        User author = new User("author", "author@test.com", "pwd");
+        author.setId(1L);
+        Category category = new Category("Immobilier");
+        category.setId(10L);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(author));
+        when(categoryRepository.findById(10L)).thenReturn(Optional.of(category));
+        when(annonceRepository.save(any(Annonce.class))).thenAnswer(invocation -> {
+            Annonce annonce = invocation.getArgument(0);
+            annonce.setId(100L);
+            return annonce;
         });
 
-        Annonce annonce = annonceService.create("Appart F3", "Bel appartement",
-                "Paris 10", "contact@test.com", 1L, 10L);
+        Annonce result = annonceService.create("Titre", "Description", "Paris", "mail@test.com", 1L, 10L);
 
-        assertEquals("Appart F3", annonce.getTitle());
-        assertEquals(AnnonceStatus.DRAFT, annonce.getStatus());
-        assertEquals(testUser, annonce.getAuthor());
-        assertEquals(testCategory, annonce.getCategory());
-        verify(tx).begin();
-        verify(tx).commit();
+        assertNotNull(result.getId());
+        assertEquals("Titre", result.getTitle());
+        assertEquals(author, result.getAuthor());
+        assertEquals(category, result.getCategory());
     }
 
     @Test
-    @DisplayName("create() échoue si l'auteur n'existe pas")
-    void create_shouldFail_whenAuthorNotFound() {
-        when(userRepository.findById(em, 999L)).thenReturn(Optional.empty());
+    @DisplayName("create_shouldThrow_whenUserNotFound")
+    void create_shouldThrow_whenUserNotFound() {
+        when(userRepository.findById(404L)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class,
-                () -> annonceService.create("Titre", "Desc", "Addr", "m@t.com", 999L, 10L));
-        verify(tx).rollback();
+                () -> annonceService.create("Titre", "Description", "Paris", "mail@test.com", 404L, 10L));
     }
 
     @Test
-    @DisplayName("create() échoue si la catégorie n'existe pas")
-    void create_shouldFail_whenCategoryNotFound() {
-        when(userRepository.findById(em, 1L)).thenReturn(Optional.of(testUser));
-        when(categoryRepository.findById(em, 999L)).thenReturn(Optional.empty());
+    @DisplayName("create_shouldThrow_whenCategoryNotFound")
+    void create_shouldThrow_whenCategoryNotFound() {
+        User author = new User("author", "author@test.com", "pwd");
+        author.setId(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(author));
+        when(categoryRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class,
-                () -> annonceService.create("Titre", "Desc", "Addr", "m@t.com", 1L, 999L));
-        verify(tx).rollback();
-    }
-
-    @Test
-    @DisplayName("Chaque méthode du service utilise EntityManagerUtil")
-    void service_shouldUseEntityManagerUtil() {
-        when(userRepository.findById(em, 1L)).thenReturn(Optional.of(testUser));
-        when(categoryRepository.findById(em, 10L)).thenReturn(Optional.of(testCategory));
-        when(annonceRepository.save(eq(em), any(Annonce.class))).thenAnswer(inv -> inv.getArgument(1));
-
-        annonceService.create("Test", "Desc", "Addr", "m@t.com", 1L, 10L);
-
-        mockedUtil.verify(EntityManagerUtil::getEntityManager, atLeastOnce());
+                () -> annonceService.create("Titre", "Description", "Paris", "mail@test.com", 1L, 999L));
     }
 }

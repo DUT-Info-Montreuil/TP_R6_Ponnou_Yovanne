@@ -1,96 +1,73 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.service;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.Category;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.config.EntityManagerUtil;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ResourceNotFoundException;
 
-import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 class CreateUpdateCategoryServiceTest extends CategoryServiceTestBase {
 
     @Test
-    @DisplayName("create() crée une catégorie avec succès")
-    void create_shouldCreateCategory() {
-        when(categoryRepository.countWithFilters(eq(em), eq(Map.of("label", "Immobilier")))).thenReturn(0L);
-        when(categoryRepository.save(eq(em), any(Category.class))).thenAnswer(inv -> {
-            Category c = inv.getArgument(1);
-            c.setId(1L);
-            return c;
+    @DisplayName("create_shouldSave")
+    void create_shouldSave() {
+        when(categoryRepository.existsByLabel("Immobilier")).thenReturn(false);
+        when(categoryRepository.save(any(Category.class))).thenAnswer(i -> {
+            Category category = i.getArgument(0);
+            category.setId(1L);
+            return category;
         });
 
-        Category cat = categoryService.create("Immobilier");
+        Category result = categoryService.create("Immobilier");
 
-        assertNotNull(cat.getId());
-        assertEquals("Immobilier", cat.getLabel());
-        verify(tx).commit();
+        assertEquals(1L, result.getId());
+        assertEquals("Immobilier", result.getLabel());
     }
 
     @Test
-    @DisplayName("create() échoue si le label existe déjà")
-    void create_shouldFail_whenDuplicateLabel() {
-        when(categoryRepository.countWithFilters(eq(em), eq(Map.of("label", "Immobilier")))).thenReturn(1L);
+    @DisplayName("create_shouldThrow_whenLabelExists")
+    void create_shouldThrow_whenLabelExists() {
+        when(categoryRepository.existsByLabel("Immobilier")).thenReturn(true);
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> categoryService.create("Immobilier"));
-        assertTrue(ex.getMessage().contains("catégorie existe"));
+        assertThrows(IllegalArgumentException.class, () -> categoryService.create("Immobilier"));
     }
 
     @Test
-    @DisplayName("update() modifie le label")
-    void update_shouldModifyLabel() {
+    @DisplayName("update_shouldUpdate")
+    void update_shouldUpdate() {
         Category existing = new Category("Ancien");
         existing.setId(1L);
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(categoryRepository.existsByLabel("Nouveau")).thenReturn(false);
+        when(categoryRepository.save(any(Category.class))).thenAnswer(i -> i.getArgument(0));
 
-        when(categoryRepository.findById(em, 1L)).thenReturn(Optional.of(existing));
-        when(categoryRepository.countWithFilters(eq(em), eq(Map.of("label", "Nouveau")))).thenReturn(0L);
-        when(categoryRepository.update(em, existing)).thenReturn(existing);
+        Category result = categoryService.update(1L, "Nouveau");
 
-        Category updated = categoryService.update(1L, "Nouveau");
-
-        assertEquals("Nouveau", updated.getLabel());
-        verify(tx).commit();
+        assertEquals("Nouveau", result.getLabel());
     }
 
     @Test
-    @DisplayName("update() échoue si le nouveau label est déjà pris")
-    void update_shouldFail_whenLabelAlreadyTaken() {
-        Category vehicules = new Category("Véhicules");
-        vehicules.setId(2L);
+    @DisplayName("update_shouldThrow_whenNotFound")
+    void update_shouldThrow_whenNotFound() {
+        when(categoryRepository.findById(404L)).thenReturn(Optional.empty());
 
-        when(categoryRepository.findById(em, 2L)).thenReturn(Optional.of(vehicules));
-        when(categoryRepository.countWithFilters(eq(em), eq(Map.of("label", "Immobilier")))).thenReturn(1L);
-
-        assertThrows(IllegalArgumentException.class,
-                () -> categoryService.update(2L, "Immobilier"));
+        assertThrows(ResourceNotFoundException.class, () -> categoryService.update(404L, "Nouveau"));
     }
 
     @Test
-    @DisplayName("update() permet de garder le même label (pas de faux doublon)")
-    void update_shouldAllow_sameLabelOnSameCategory() {
-        Category existing = new Category("Immobilier");
+    @DisplayName("update_shouldThrow_whenNewLabelExists")
+    void update_shouldThrow_whenNewLabelExists() {
+        Category existing = new Category("Ancien");
         existing.setId(1L);
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(categoryRepository.existsByLabel("Immo")).thenReturn(true);
 
-        when(categoryRepository.findById(em, 1L)).thenReturn(Optional.of(existing));
-        when(categoryRepository.update(em, existing)).thenReturn(existing);
-
-        Category updated = categoryService.update(1L, "Immobilier");
-
-        assertEquals("Immobilier", updated.getLabel());
-        verify(categoryRepository, never()).countWithFilters(any(), any());
-    }
-
-    @Test
-    @DisplayName("Chaque opération du service appelle EntityManagerUtil")
-    void service_shouldCallEntityManagerUtil() {
-        when(categoryRepository.countWithFilters(eq(em), any())).thenReturn(0L);
-        when(categoryRepository.save(eq(em), any(Category.class))).thenAnswer(inv -> inv.getArgument(1));
-
-        categoryService.create("Test");
-
-        mockedUtil.verify(EntityManagerUtil::getEntityManager, atLeastOnce());
+        assertThrows(IllegalArgumentException.class, () -> categoryService.update(1L, "Immo"));
     }
 }

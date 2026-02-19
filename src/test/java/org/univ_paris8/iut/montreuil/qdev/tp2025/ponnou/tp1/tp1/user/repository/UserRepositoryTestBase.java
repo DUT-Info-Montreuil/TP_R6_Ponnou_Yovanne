@@ -1,42 +1,26 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.repository;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-
+@DataJpaTest
 abstract class UserRepositoryTestBase {
 
-    protected static EntityManagerFactory emf;
-    protected EntityManager em;
+    @Autowired
     protected UserRepository userRepository;
 
-    @BeforeAll
-    static void setUpFactory() {
-        emf = Persistence.createEntityManagerFactory("MasterAnnoncePU");
-    }
+    @Autowired
+    protected TestEntityManager entityManager;
 
-    @AfterAll
-    static void tearDownFactory() {
-        if (emf != null) emf.close();
-    }
+    protected User existing;
 
     @BeforeEach
-    void setUp() {
-        em = emf.createEntityManager();
-        userRepository = new UserRepository();
-    }
-
-    @AfterEach
-    void tearDown() {
-        if (em.getTransaction().isActive()) {
-            em.getTransaction().rollback();
-        }
-        em.getTransaction().begin();
-        em.createQuery("DELETE FROM Annonce").executeUpdate();
-        em.createQuery("DELETE FROM User").executeUpdate();
-        em.getTransaction().commit();
-        em.close();
+    void setUpBase() {
+        existing = new User("alice", "alice@test.com", "password123");
+        entityManager.persist(existing);
+        entityManager.flush();
     }
 }

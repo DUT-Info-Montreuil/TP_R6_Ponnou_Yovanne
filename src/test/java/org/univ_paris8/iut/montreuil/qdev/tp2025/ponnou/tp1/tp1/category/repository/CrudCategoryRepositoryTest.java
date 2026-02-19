@@ -1,65 +1,38 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.repository;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.Category;
 
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CrudCategoryRepositoryTest extends CategoryRepositoryTestBase {
 
     @Test
-    @DisplayName("save() persiste une categorie")
+    @DisplayName("save_shouldPersistCategory")
     void save_shouldPersistCategory() {
-        Category cat = new Category("Immobilier");
-        em.getTransaction().begin();
-        Category saved = categoryRepository.save(em, cat);
+        Category category = new Category("Vehicules");
 
-        assertNotNull(saved.getId());
-        assertEquals("Immobilier", saved.getLabel());
+        Category saved = categoryRepository.save(category);
+
+        assertTrue(saved.getId() != null);
+        assertEquals("Vehicules", saved.getLabel());
     }
 
     @Test
-    @DisplayName("findById() retourne la categorie existante")
+    @DisplayName("findById_shouldReturnCategory")
     void findById_shouldReturnCategory() {
-        Category cat = new Category("Vehicules");
-        em.getTransaction().begin();
-        categoryRepository.save(em, cat);
+        Category found = categoryRepository.findById(existing.getId()).orElseThrow();
 
-        Optional<Category> found = categoryRepository.findById(em, cat.getId());
-
-        assertTrue(found.isPresent());
-        assertEquals("Vehicules", found.get().getLabel());
+        assertEquals(existing.getLabel(), found.getLabel());
     }
 
     @Test
-    @DisplayName("update() modifie le label")
-    void update_shouldModifyLabel() {
-        Category cat = new Category("Ancien label");
-        em.getTransaction().begin();
-        categoryRepository.save(em, cat);
-        em.getTransaction().commit();
+    @DisplayName("delete_shouldRemoveCategory")
+    void delete_shouldRemoveCategory() {
+        categoryRepository.deleteById(existing.getId());
 
-        cat.setLabel("Nouveau label");
-        em.getTransaction().begin();
-        Category updated = categoryRepository.update(em, cat);
-
-        assertEquals("Nouveau label", updated.getLabel());
-    }
-
-    @Test
-    @DisplayName("deleteById() supprime la categorie")
-    void deleteById_shouldRemoveCategory() {
-        Category cat = new Category("A supprimer");
-        em.getTransaction().begin();
-        categoryRepository.save(em, cat);
-        Long id = cat.getId();
-        em.getTransaction().commit();
-
-        em.getTransaction().begin();
-        categoryRepository.deleteById(em, id);
-
-        assertTrue(categoryRepository.findById(em, id).isEmpty());
+        assertTrue(categoryRepository.findById(existing.getId()).isEmpty());
     }
 }

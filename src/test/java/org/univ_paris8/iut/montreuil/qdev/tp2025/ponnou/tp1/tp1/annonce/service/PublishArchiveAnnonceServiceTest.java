@@ -1,66 +1,84 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.service;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.Annonce;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.AnnonceStatus;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ResourceNotFoundException;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.Category;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ForbiddenOperationException;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 class PublishArchiveAnnonceServiceTest extends AnnonceServiceTestBase {
 
     @Test
-    @DisplayName("publish() passe une annonce DRAFT en PUBLISHED")
-    void publish_shouldSetStatusToPublished() {
-        Annonce annonce = buildAnnonce(1L, AnnonceStatus.DRAFT);
+    @DisplayName("publish_shouldSetStatusPublished")
+    void publish_shouldSetStatusPublished() {
+        Annonce annonce = annonce(1L, 1L, AnnonceStatus.DRAFT);
+        when(annonceRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(annonce));
+        when(annonceRepository.save(any(Annonce.class))).thenAnswer(i -> i.getArgument(0));
 
-        when(annonceRepository.findOneWithFilters(eq(em), anyMap(), anyString()))
-                .thenReturn(Optional.of(annonce));
-        when(annonceRepository.update(em, annonce)).thenReturn(annonce);
+        Annonce result = annonceService.publish(1L, 1L);
 
-        Annonce published = annonceService.publish(1L, 1L);
-
-        assertEquals(AnnonceStatus.PUBLISHED, published.getStatus());
-        verify(tx).commit();
+        assertEquals(AnnonceStatus.PUBLISHED, result.getStatus());
     }
 
     @Test
-    @DisplayName("publish() échoue pour une annonce ARCHIVED")
-    void publish_shouldFail_whenArchived() {
-        Annonce annonce = buildAnnonce(1L, AnnonceStatus.ARCHIVED);
+    @DisplayName("publish_shouldThrow_whenNotOwner")
+    void publish_shouldThrow_whenNotOwner() {
+        Annonce annonce = annonce(1L, 2L, AnnonceStatus.DRAFT);
+        when(annonceRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(annonce));
 
-        when(annonceRepository.findOneWithFilters(eq(em), anyMap(), anyString()))
-                .thenReturn(Optional.of(annonce));
-
-        IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> annonceService.publish(1L, 1L));
-        assertTrue(ex.getMessage().contains("archivée"));
+        assertThrows(ForbiddenOperationException.class, () -> annonceService.publish(1L, 1L));
     }
 
     @Test
-    @DisplayName("publish() échoue pour un ID inexistant")
-    void publish_shouldFail_whenNotFound() {
-        when(annonceRepository.findOneWithFilters(eq(em), anyMap(), anyString()))
-                .thenReturn(Optional.empty());
+    @DisplayName("publish_shouldThrow_whenArchived")
+    void publish_shouldThrow_whenArchived() {
+        Annonce annonce = annonce(1L, 1L, AnnonceStatus.ARCHIVED);
+        when(annonceRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(annonce));
 
-        assertThrows(ResourceNotFoundException.class,
-                () -> annonceService.publish(999L, 1L));
+        assertThrows(IllegalStateException.class, () -> annonceService.publish(1L, 1L));
     }
 
     @Test
-    @DisplayName("archive() passe une annonce en ARCHIVED")
-    void archive_shouldSetStatusToArchived() {
-        Annonce annonce = buildAnnonce(1L, AnnonceStatus.PUBLISHED);
+    @DisplayName("archive_shouldSetStatusArchived")
+    void archive_shouldSetStatusArchived() {
+        Annonce annonce = annonce(1L, 1L, AnnonceStatus.PUBLISHED);
+        when(annonceRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(annonce));
+        when(annonceRepository.save(any(Annonce.class))).thenAnswer(i -> i.getArgument(0));
 
-        when(annonceRepository.findOneWithFilters(eq(em), anyMap(), anyString()))
-                .thenReturn(Optional.of(annonce));
-        when(annonceRepository.update(em, annonce)).thenReturn(annonce);
+        Annonce result = annonceService.archive(1L, 1L);
 
-        Annonce archived = annonceService.archive(1L, 1L);
+        assertEquals(AnnonceStatus.ARCHIVED, result.getStatus());
+    }
 
-        assertEquals(AnnonceStatus.ARCHIVED, archived.getStatus());
+    @Test
+    @DisplayName("archive_shouldThrow_whenNotOwner")
+    void archive_shouldThrow_whenNotOwner() {
+        Annonce annonce = annonce(1L, 2L, AnnonceStatus.DRAFT);
+        when(annonceRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(annonce));
+
+        assertThrows(ForbiddenOperationException.class, () -> annonceService.archive(1L, 1L));
+    }
+
+    private Annonce annonce(Long annonceId, Long authorId, AnnonceStatus status) {
+        User author = new User("author", "author@test.com", "pwd");
+        author.setId(authorId);
+        Category category = new Category("Immobilier");
+        category.setId(10L);
+
+        Annonce annonce = new Annonce("Titre", "Description", "Paris", "mail@test.com");
+        annonce.setId(annonceId);
+        annonce.setAuthor(author);
+        annonce.setCategory(category);
+        annonce.setStatus(status);
+        return annonce;
     }
 }
