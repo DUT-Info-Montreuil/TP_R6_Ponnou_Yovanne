@@ -20,6 +20,7 @@ import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.repository.UserRepository;
 
+import java.sql.Timestamp;
 import java.util.Optional;
 
 @Slf4j
@@ -183,12 +184,20 @@ public class AnnonceService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Annonce> searchWithFilters(String keyword, Long categoryId, Long authorId, AnnonceStatus status, Pageable pageable) {
+    public Page<Annonce> searchWithFilters(String keyword,
+                                           Long categoryId,
+                                           Long authorId,
+                                           AnnonceStatus status,
+                                           Timestamp fromDate,
+                                           Timestamp toDate,
+                                           Pageable pageable) {
         Specification<Annonce> specification = Specification.allOf(
                 AnnonceSpecifications.hasKeyword(keyword),
                 AnnonceSpecifications.hasCategoryId(categoryId),
                 AnnonceSpecifications.hasAuthorId(authorId),
-                AnnonceSpecifications.hasStatus(status)
+                AnnonceSpecifications.hasStatus(status),
+                AnnonceSpecifications.dateAfter(fromDate),
+                AnnonceSpecifications.dateBefore(toDate)
         );
         return annonceRepository.findAll(specification, pageable);
     }

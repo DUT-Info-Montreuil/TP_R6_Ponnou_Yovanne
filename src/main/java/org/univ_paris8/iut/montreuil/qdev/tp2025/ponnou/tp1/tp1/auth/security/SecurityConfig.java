@@ -28,7 +28,7 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login", "/actuator/health", "/swagger-ui/**", "/swagger-ui.html", "/api-docs/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/annonces/**", "/api/categories/**", "/api/users/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/annonces/**", "/api/categories/**", "/api/users/**", "/api/meta/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

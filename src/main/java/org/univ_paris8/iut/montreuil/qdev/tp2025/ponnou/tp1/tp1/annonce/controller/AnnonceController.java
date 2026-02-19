@@ -22,11 +22,16 @@ import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.mappers.
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.Annonce;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.AnnonceStatus;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.service.AnnonceService;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.utils.AnnonceFieldValidator;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.security.AuthenticatedUser;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.dto.PaginatedResponse;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ResourceNotFoundException;
 
 import java.net.URI;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 
 @RestController
 @RequestMapping("/api/annonces")
@@ -46,12 +51,19 @@ public class AnnonceController {
     public ResponseEntity<PaginatedResponse<AnnonceDTO>> getAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "date,desc") String sort,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Long authorId,
-            @RequestParam(required = false) AnnonceStatus status) {
+            @RequestParam(required = false) AnnonceStatus status,
+            @RequestParam(required = false) String fromDate,
+            @RequestParam(required = false) String toDate) {
+        Sort sortParam = parseSort(sort);
+        Timestamp fromDateTs = parseTimestamp(fromDate, "fromDate", false);
+        Timestamp toDateTs = parseTimestamp(toDate, "toDate", true);
+
         Page<Annonce> annonces = annonceService.searchWithFilters(
-                keyword, categoryId, authorId, status, PageRequest.of(page, size, Sort.by("date").descending()));
+                keyword, categoryId, authorId, status, fromDateTs, toDateTs, PageRequest.of(page, size, sortParam));
         return ResponseEntity.ok(new PaginatedResponse<>(
                 annonces.map(annonceMapper::toDTO).getContent(),
                 page,
@@ -162,5 +174,38 @@ public class AnnonceController {
             return user.getUserId();
         }
         throw new ResourceNotFoundException("Utilisateur authentifie introuvable");
+    }
+
+    private Sort parseSort(String sort) {
+        String[] sortParts = sort.split(",");
+        if (sortParts.length != 2) {
+            throw new IllegalArgumentException("Parametre sort invalide. Format attendu: field,asc|desc");
+        }
+
+        String sortField = sortParts[0].trim();
+        String sortDirection = sortParts[1].trim();
+        AnnonceFieldValidator.validateSortField(sortField);
+
+        Sort.Direction direction = Sort.Direction.fromOptionalString(sortDirection)
+                .orElseThrow(() -> new IllegalArgumentException("Direction de tri invalide: " + sortDirection));
+        return Sort.by(direction, sortField);
+    }
+
+    private Timestamp parseTimestamp(String value, String parameterName, boolean endOfDayForDate) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return Timestamp.valueOf(LocalDateTime.parse(value));
+        } catch (DateTimeParseException ignored) {
+            try {
+                LocalDate date = LocalDate.parse(value);
+                LocalDateTime dateTime = endOfDayForDate ? date.atTime(23, 59, 59) : date.atStartOfDay();
+                return Timestamp.valueOf(dateTime);
+            } catch (DateTimeParseException ex) {
+                throw new IllegalArgumentException(
+                        "Format invalide pour " + parameterName + ". Attendu: yyyy-MM-dd ou yyyy-MM-ddTHH:mm:ss");
+            }
+        }
     }
 }

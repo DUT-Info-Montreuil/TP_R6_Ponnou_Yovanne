@@ -1,171 +1,105 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.repository;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.Annonce;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.AnnonceStatus;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.Category;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
 
-import javax.persistence.EntityManager;
-import java.util.*;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SearchAnnonceRepositoryTest extends AnnonceRepositoryTestBase {
 
     @Test
-    @DisplayName("findWithFilters() filtre par statut PUBLISHED")
-    void findWithFilters_shouldFilterByStatus() {
-        em.getTransaction().begin();
-        em.persist(createAnnonce("Draft 1", "Desc", AnnonceStatus.DRAFT));
-        em.persist(createAnnonce("Published 1", "Desc", AnnonceStatus.PUBLISHED));
-        em.persist(createAnnonce("Published 2", "Desc", AnnonceStatus.PUBLISHED));
-        em.getTransaction().commit();
+    @DisplayName("searchWithFilters_shouldFilterByStatus")
+    void searchWithFilters_shouldFilterByStatus() {
+        persistAnnonce("A1", "Desc", AnnonceStatus.DRAFT, ts("2025-01-01T10:00:00"), testUser, testCategory);
+        persistAnnonce("A2", "Desc", AnnonceStatus.PUBLISHED, ts("2025-01-02T10:00:00"), testUser, testCategory);
 
-        List<Annonce> published = annonceRepository.findWithFilters(em,
-                Map.of("status", AnnonceStatus.PUBLISHED),
-                null, null, "date DESC", null);
+        Specification<Annonce> spec = Specification.allOf(AnnonceSpecifications.hasStatus(AnnonceStatus.PUBLISHED));
+        Page<Annonce> page = annonceRepository.findAll(spec, PageRequest.of(0, 10));
 
-        assertEquals(2, published.size());
-        assertTrue(published.stream().allMatch(a -> a.getStatus() == AnnonceStatus.PUBLISHED));
+        assertEquals(1, page.getTotalElements());
+        assertTrue(page.getContent().stream().allMatch(a -> a.getStatus() == AnnonceStatus.PUBLISHED));
     }
 
     @Test
-    @DisplayName("findWithFilters() recherche par mot-cle dans titre et description")
-    void findWithFilters_shouldSearchByKeyword() {
-        em.getTransaction().begin();
-        em.persist(createAnnonce("Appartement lumineux", "Centre ville", AnnonceStatus.PUBLISHED));
-        em.persist(createAnnonce("Maison de campagne", "Jardin lumineux", AnnonceStatus.PUBLISHED));
-        em.persist(createAnnonce("Studio", "Petit studio", AnnonceStatus.PUBLISHED));
-        em.getTransaction().commit();
+    @DisplayName("searchWithFilters_shouldFilterByKeyword")
+    void searchWithFilters_shouldFilterByKeyword() {
+        persistAnnonce("Appartement lumineux", "Centre ville", AnnonceStatus.PUBLISHED, ts("2025-01-01T10:00:00"), testUser, testCategory);
+        persistAnnonce("Maison", "Avec jardin", AnnonceStatus.PUBLISHED, ts("2025-01-02T10:00:00"), testUser, testCategory);
 
-        List<Annonce> results = annonceRepository.findWithFilters(em,
-                Map.of("status", AnnonceStatus.PUBLISHED),
-                "lumineux",
-                new String[]{"title", "description"},
-                "date DESC", null);
+        Specification<Annonce> spec = Specification.allOf(AnnonceSpecifications.hasKeyword("lumineux"));
+        Page<Annonce> page = annonceRepository.findAll(spec, PageRequest.of(0, 10));
 
-        assertEquals(2, results.size());
+        assertEquals(1, page.getTotalElements());
+        assertEquals("Appartement lumineux", page.getContent().get(0).getTitle());
     }
 
     @Test
-    @DisplayName("findWithFilters() pagine correctement les resultats")
-    void findWithFilters_shouldPaginateResults() {
-        em.getTransaction().begin();
-        for (int i = 0; i < 15; i++) {
-            em.persist(createAnnonce("Annonce " + i, "Description " + i, AnnonceStatus.PUBLISHED));
+    @DisplayName("searchWithFilters_shouldFilterByDateRange")
+    void searchWithFilters_shouldFilterByDateRange() {
+        persistAnnonce("Old", "Desc", AnnonceStatus.PUBLISHED, ts("2024-01-01T00:00:00"), testUser, testCategory);
+        persistAnnonce("InRange", "Desc", AnnonceStatus.PUBLISHED, ts("2025-06-15T12:00:00"), testUser, testCategory);
+        persistAnnonce("New", "Desc", AnnonceStatus.PUBLISHED, ts("2026-01-01T00:00:00"), testUser, testCategory);
+
+        Specification<Annonce> spec = Specification.allOf(
+                AnnonceSpecifications.dateAfter(ts("2025-01-01T00:00:00")),
+                AnnonceSpecifications.dateBefore(ts("2025-12-31T23:59:59"))
+        );
+        Page<Annonce> page = annonceRepository.findAll(spec, PageRequest.of(0, 10));
+
+        assertEquals(1, page.getTotalElements());
+        assertEquals("InRange", page.getContent().get(0).getTitle());
+    }
+
+    @Test
+    @DisplayName("searchWithFilters_shouldPaginate")
+    void searchWithFilters_shouldPaginate() {
+        for (int i = 0; i < 12; i++) {
+            persistAnnonce("Annonce " + i, "Desc", AnnonceStatus.PUBLISHED,
+                    ts("2025-01-01T10:00:" + String.format("%02d", i)), testUser, testCategory);
         }
-        em.getTransaction().commit();
 
-        List<Annonce> page0 = annonceRepository.findWithFilters(em,
-                Map.of("status", AnnonceStatus.PUBLISHED),
-                null, null, "title ASC", null, 0, 5);
-        assertEquals(5, page0.size());
+        Specification<Annonce> spec = Specification.allOf(AnnonceSpecifications.hasStatus(AnnonceStatus.PUBLISHED));
+        Page<Annonce> page = annonceRepository.findAll(spec, PageRequest.of(1, 5));
 
-        List<Annonce> page1 = annonceRepository.findWithFilters(em,
-                Map.of("status", AnnonceStatus.PUBLISHED),
-                null, null, "title ASC", null, 1, 5);
-        assertEquals(5, page1.size());
-
-        List<Annonce> page2 = annonceRepository.findWithFilters(em,
-                Map.of("status", AnnonceStatus.PUBLISHED),
-                null, null, "title ASC", null, 2, 5);
-        assertEquals(5, page2.size());
-
-        assertNotEquals(page0.get(0).getId(), page1.get(0).getId());
+        assertEquals(12, page.getTotalElements());
+        assertEquals(5, page.getContent().size());
+        assertEquals(3, page.getTotalPages());
     }
 
     @Test
-    @DisplayName("countWithFilters() compte le bon nombre d'annonces publiees")
-    void countWithFilters_shouldCountCorrectly() {
-        em.getTransaction().begin();
-        em.persist(createAnnonce("A1", "D1", AnnonceStatus.PUBLISHED));
-        em.persist(createAnnonce("A2", "D2", AnnonceStatus.PUBLISHED));
-        em.persist(createAnnonce("A3", "D3", AnnonceStatus.DRAFT));
-        em.persist(createAnnonce("A4", "D4", AnnonceStatus.ARCHIVED));
-        em.getTransaction().commit();
+    @DisplayName("searchWithFilters_shouldCombineMultipleFilters")
+    void searchWithFilters_shouldCombineMultipleFilters() {
+        persistAnnonce("Appartement central", "Desc", AnnonceStatus.PUBLISHED, ts("2025-06-01T10:00:00"), testUser, testCategory);
+        persistAnnonce("Appartement central", "Desc", AnnonceStatus.PUBLISHED, ts("2025-06-01T10:00:00"), otherUser, testCategory);
+        persistAnnonce("Appartement central", "Desc", AnnonceStatus.DRAFT, ts("2025-06-01T10:00:00"), testUser, testCategory);
+        persistAnnonce("Studio", "Desc", AnnonceStatus.PUBLISHED, ts("2025-06-01T10:00:00"), testUser, testCategory);
+        persistAnnonce("Appartement central", "Desc", AnnonceStatus.PUBLISHED, ts("2025-06-01T10:00:00"), testUser, otherCategory);
 
-        long totalCount = annonceRepository.count(em);
-        assertEquals(4, totalCount);
+        Specification<Annonce> spec = Specification.allOf(
+                AnnonceSpecifications.hasKeyword("appartement"),
+                AnnonceSpecifications.hasStatus(AnnonceStatus.PUBLISHED),
+                AnnonceSpecifications.hasAuthorId(testUser.getId()),
+                AnnonceSpecifications.hasCategoryId(testCategory.getId()),
+                AnnonceSpecifications.dateAfter(ts("2025-01-01T00:00:00")),
+                AnnonceSpecifications.dateBefore(ts("2025-12-31T23:59:59"))
+        );
+        Page<Annonce> page = annonceRepository.findAll(spec, PageRequest.of(0, 10));
 
-        long publishedCount = annonceRepository.countWithFilters(em, Map.of("status", AnnonceStatus.PUBLISHED));
-        assertEquals(2, publishedCount);
+        assertEquals(1, page.getTotalElements());
+        assertEquals(testUser.getId(), page.getContent().get(0).getAuthor().getId());
+        assertEquals(testCategory.getId(), page.getContent().get(0).getCategory().getId());
     }
 
-    @Test
-    @DisplayName("findWithFilters() filtre par auteur")
-    void findWithFilters_shouldFilterByAuthor() {
-        User otherUser = new User("other", "other@test.com", "password123");
-        em.getTransaction().begin();
-        em.persist(otherUser);
-        em.getTransaction().commit();
-
-        Annonce annonceUser1 = createAnnonce("Par testuser", "Desc", AnnonceStatus.PUBLISHED);
-        Annonce annonceUser2 = createAnnonce("Par other", "Desc", AnnonceStatus.PUBLISHED);
-        annonceUser2.setAuthor(otherUser);
-
-        em.getTransaction().begin();
-        em.persist(annonceUser1);
-        em.persist(annonceUser2);
-        em.getTransaction().commit();
-
-        List<Annonce> byAuthor = annonceRepository.findWithFilters(em,
-                Map.of("author.id", testUser.getId()),
-                null, null, "date DESC",
-                "LEFT JOIN FETCH e.author LEFT JOIN FETCH e.category");
-
-        assertEquals(1, byAuthor.size());
-        assertEquals("Par testuser", byAuthor.get(0).getTitle());
-    }
-
-    @Test
-    @DisplayName("findWithFilters() filtre par categorie")
-    void findWithFilters_shouldFilterByCategory() {
-        Category otherCategory = new Category("Vehicules");
-        em.getTransaction().begin();
-        em.persist(otherCategory);
-        em.getTransaction().commit();
-
-        Annonce a1 = createAnnonce("Immobilier annonce", "Desc", AnnonceStatus.PUBLISHED);
-        Annonce a2 = createAnnonce("Vehicule annonce", "Desc", AnnonceStatus.PUBLISHED);
-        a2.setCategory(otherCategory);
-
-        em.getTransaction().begin();
-        em.persist(a1);
-        em.persist(a2);
-        em.getTransaction().commit();
-
-        Map<String, Object> filters = new HashMap<>();
-        filters.put("category.id", testCategory.getId());
-        filters.put("status", AnnonceStatus.PUBLISHED);
-
-        List<Annonce> byCat = annonceRepository.findWithFilters(em, filters,
-                null, null, "date DESC",
-                "LEFT JOIN FETCH e.author LEFT JOIN FETCH e.category");
-
-        assertEquals(1, byCat.size());
-        assertEquals("Immobilier annonce", byCat.get(0).getTitle());
-    }
-
-    @Test
-    @DisplayName("findOneWithFilters() avec JOIN FETCH charge les relations")
-    void findOneWithFilters_withJoinFetch_shouldLoadRelations() {
-        Annonce annonce = createAnnonce("Test join", "Desc", AnnonceStatus.PUBLISHED);
-        em.getTransaction().begin();
-        em.persist(annonce);
-        em.getTransaction().commit();
-
-        EntityManager em2 = emf.createEntityManager();
-        try {
-            Optional<Annonce> found = annonceRepository.findOneWithFilters(em2,
-                    Map.of("id", annonce.getId()),
-                    "LEFT JOIN FETCH e.author LEFT JOIN FETCH e.category");
-
-            assertTrue(found.isPresent());
-            assertEquals("testuser", found.get().getAuthor().getUsername());
-            assertEquals("Immobilier", found.get().getCategory().getLabel());
-        } finally {
-            em2.close();
-        }
+    private Timestamp ts(String isoLocalDateTime) {
+        return Timestamp.valueOf(LocalDateTime.parse(isoLocalDateTime));
     }
 }

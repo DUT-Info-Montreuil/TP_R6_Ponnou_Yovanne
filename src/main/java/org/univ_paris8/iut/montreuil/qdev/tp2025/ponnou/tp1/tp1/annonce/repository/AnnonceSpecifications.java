@@ -4,6 +4,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.Annonce;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.AnnonceStatus;
 
+import java.sql.Timestamp;
+
 public final class AnnonceSpecifications {
 
     private AnnonceSpecifications() {
@@ -39,5 +41,19 @@ public final class AnnonceSpecifications {
             return null;
         }
         return (root, query, cb) -> cb.equal(root.get("status"), status);
+    }
+
+    public static Specification<Annonce> dateAfter(Timestamp fromDate) {
+        if (fromDate == null) {
+            return null;
+        }
+        return (root, query, cb) -> cb.greaterThanOrEqualTo(root.get("date"), fromDate);
+    }
+
+    public static Specification<Annonce> dateBefore(Timestamp toDate) {
+        if (toDate == null) {
+            return null;
+        }
+        return (root, query, cb) -> cb.lessThanOrEqualTo(root.get("date"), toDate);
     }
 }

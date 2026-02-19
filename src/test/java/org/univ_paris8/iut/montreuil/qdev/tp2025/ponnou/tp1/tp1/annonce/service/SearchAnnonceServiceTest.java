@@ -1,65 +1,40 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.service;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.Annonce;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.AnnonceStatus;
 
+import java.sql.Timestamp;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class SearchAnnonceServiceTest extends AnnonceServiceTestBase {
 
     @Test
-    @DisplayName("findPublishedPaginated() délègue au repository avec filtre PUBLISHED")
-    void findPublishedPaginated_shouldReturnOnlyPublished() {
-        Annonce a = buildAnnonce(1L, AnnonceStatus.PUBLISHED);
+    @DisplayName("searchWithFilters_shouldDelegateToRepository")
+    void searchWithFilters_shouldDelegateToRepository() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Timestamp fromDate = Timestamp.valueOf("2025-01-01 00:00:00");
+        Timestamp toDate = Timestamp.valueOf("2025-12-31 23:59:59");
+        Page<Annonce> expected = new PageImpl<>(List.of(new Annonce()), pageable, 1);
 
-        when(annonceRepository.findWithFilters(eq(em), anyMap(), isNull(), isNull(),
-                eq("date DESC"), anyString(), eq(0), eq(10)))
-                .thenReturn(List.of(a));
+        when(annonceRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), eq(pageable)))
+                .thenReturn(expected);
 
-        List<Annonce> results = annonceService.findPublishedPaginated(0, 10);
+        Page<Annonce> actual = annonceService.searchWithFilters(
+                "appart", 1L, 2L, AnnonceStatus.PUBLISHED, fromDate, toDate, pageable);
 
-        assertEquals(1, results.size());
-        assertEquals(AnnonceStatus.PUBLISHED, results.get(0).getStatus());
-    }
-
-    @Test
-    @DisplayName("searchByKeywordPaginated() recherche dans titre et description")
-    void searchByKeyword_shouldSearchInTitleAndDescription() {
-        Annonce a = buildAnnonce(1L, AnnonceStatus.PUBLISHED);
-        a.setTitle("Appartement lumineux");
-
-        when(annonceRepository.findWithFilters(eq(em), anyMap(), eq("lumineux"),
-                any(String[].class), eq("date DESC"), anyString(), eq(0), eq(10)))
-                .thenReturn(List.of(a));
-
-        List<Annonce> results = annonceService.searchByKeywordPaginated("lumineux", 0, 10);
-
-        assertEquals(1, results.size());
-    }
-
-    @Test
-    @DisplayName("findByAuthorPaginated() filtre par auteur")
-    void findByAuthor_shouldReturnOnlyAuthorAnnonces() {
-        Annonce a = buildAnnonce(1L, AnnonceStatus.DRAFT);
-
-        when(annonceRepository.findWithFilters(eq(em), anyMap(), isNull(), isNull(),
-                eq("date DESC"), anyString(), eq(0), eq(10)))
-                .thenReturn(List.of(a));
-
-        List<Annonce> results = annonceService.findByAuthorPaginated(1L, 0, 10);
-
-        assertEquals(1, results.size());
-    }
-
-    @Test
-    @DisplayName("countPublished() compte uniquement les annonces publiées")
-    void countPublished_shouldCountCorrectly() {
-        when(annonceRepository.countWithFilters(eq(em), anyMap())).thenReturn(3L);
-
-        assertEquals(3, annonceService.countPublished());
+        assertSame(expected, actual);
+        verify(annonceRepository).findAll(any(org.springframework.data.jpa.domain.Specification.class), eq(pageable));
     }
 }

@@ -2,85 +2,96 @@ package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.control
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.dto.AnnonceDTO;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.Annonce;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.AnnonceStatus;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import java.sql.Timestamp;
 import java.util.List;
-import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class GetAnnonceControllerRestTest extends AnnonceControllerRestTestBase {
 
     @Test
-    @DisplayName("GET /annonces -> 200 avec pagination")
-    void getAll_shouldReturn200WithPagination() {
-        createAnnonce();
-        createAnnonce();
+    @DisplayName("getAll_shouldReturn200WithPagination")
+    void getAll_shouldReturn200WithPagination() throws Exception {
+        Annonce entity = new Annonce("Titre", "Desc", "Paris", "mail@test.com");
+        entity.setId(1L);
 
-        Response response = jerseyTest.target("/annonces")
-                .queryParam("page", 0)
-                .queryParam("size", 10)
-                .request(MediaType.APPLICATION_JSON)
-                .get();
+        AnnonceDTO dto = new AnnonceDTO();
+        dto.setId(1L);
+        dto.setTitle("Titre");
 
-        assertEquals(200, response.getStatus());
-        Map<?, ?> json = response.readEntity(Map.class);
-        List<?> items = (List<?>) json.get("items");
-        assertEquals(2, items.size());
-        assertEquals(0, json.get("page"));
-        assertEquals(10, json.get("size"));
-        assertEquals(2, ((Number) json.get("totalItems")).intValue());
-        assertEquals(1, ((Number) json.get("totalPages")).intValue());
+        Page<Annonce> page = new PageImpl<>(List.of(entity), Pageable.ofSize(10).withPage(0), 1);
+        when(annonceService.searchWithFilters(any(), any(), any(), any(), any(), any(), any())).thenReturn(page);
+        when(annonceMapper.toDTO(entity)).thenReturn(dto);
+
+        mockMvc.perform(get("/api/annonces").param("page", "0").param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].id").value(1))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(10))
+                .andExpect(jsonPath("$.totalItems").value(1));
     }
 
     @Test
-    @DisplayName("GET /annonces -> pagination taille 1 retourne 1 item")
-    void getAll_shouldRespectPageSize() {
-        createAnnonce();
-        createAnnonce();
-        createAnnonce();
+    @DisplayName("getAll_withSortParam_shouldSortCorrectly")
+    void getAll_withSortParam_shouldSortCorrectly() throws Exception {
+        when(annonceService.searchWithFilters(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(Page.empty());
 
-        Response response = jerseyTest.target("/annonces")
-                .queryParam("page", 0)
-                .queryParam("size", 1)
-                .request(MediaType.APPLICATION_JSON)
-                .get();
+        mockMvc.perform(get("/api/annonces").param("sort", "title,asc"))
+                .andExpect(status().isOk());
 
-        assertEquals(200, response.getStatus());
-        Map<?, ?> json = response.readEntity(Map.class);
-        List<?> items = (List<?>) json.get("items");
-        assertEquals(1, items.size());
-        assertEquals(3, ((Number) json.get("totalItems")).intValue());
-        assertEquals(3, ((Number) json.get("totalPages")).intValue());
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(annonceService).searchWithFilters(any(), any(), any(), any(), any(), any(), pageableCaptor.capture());
+        Sort.Order order = pageableCaptor.getValue().getSort().getOrderFor("title");
+        org.junit.jupiter.api.Assertions.assertNotNull(order);
+        org.junit.jupiter.api.Assertions.assertEquals(Sort.Direction.ASC, order.getDirection());
     }
 
     @Test
-    @DisplayName("GET /annonces/{id} -> 200 avec payload complet")
-    void getById_shouldReturn200() {
-        Number id = createAnnonce();
-
-        Response response = jerseyTest.target("/annonces/" + id)
-                .request(MediaType.APPLICATION_JSON)
-                .get();
-
-        assertEquals(200, response.getStatus());
-        Map<?, ?> json = response.readEntity(Map.class);
-        assertEquals("Appart F3", json.get("title"));
-        assertEquals("DRAFT", json.get("status"));
-        assertEquals("author", json.get("authorUsername"));
-        assertEquals("Immobilier", json.get("categoryLabel"));
+    @DisplayName("getAll_withInvalidSort_shouldReturn400")
+    void getAll_withInvalidSort_shouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/annonces").param("sort", "invalidField,asc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("BAD_REQUEST"));
     }
 
     @Test
-    @DisplayName("GET /annonces/{id} -> 404 si inexistant")
-    void getById_shouldReturn404_whenNotFound() {
-        Response response = jerseyTest.target("/annonces/999")
-                .request(MediaType.APPLICATION_JSON)
-                .get();
+    @DisplayName("getAll_withFilters_shouldFilterResults")
+    void getAll_withFilters_shouldFilterResults() throws Exception {
+        when(annonceService.searchWithFilters(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(Page.empty());
 
-        assertEquals(404, response.getStatus());
-        Map<?, ?> error = response.readEntity(Map.class);
-        assertEquals("NOT_FOUND", error.get("error"));
+        mockMvc.perform(get("/api/annonces")
+                        .param("keyword", "appart")
+                        .param("status", "PUBLISHED")
+                        .param("categoryId", "1")
+                        .param("authorId", "2")
+                        .param("fromDate", "2024-01-01T00:00:00")
+                        .param("toDate", "2025-12-31T23:59:59"))
+                .andExpect(status().isOk());
+
+        verify(annonceService).searchWithFilters(
+                eq("appart"),
+                eq(1L),
+                eq(2L),
+                eq(AnnonceStatus.PUBLISHED),
+                eq(Timestamp.valueOf("2024-01-01 00:00:00")),
+                eq(Timestamp.valueOf("2025-12-31 23:59:59")),
+                any(Pageable.class));
     }
 }
