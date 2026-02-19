@@ -219,3 +219,49 @@ Elle contient des requêtes organisées par dossier :
 - **Security Tests** : 401 sans token, 401 token invalide, 400 validation, 404
 
 Le script de login sauvegarde automatiquement le token dans la variable `{{token}}` pour les requêtes suivantes.
+
+## Docker
+
+Prérequis: Docker Desktop (ou Docker Engine + Compose plugin).
+
+Lancement complet (application + PostgreSQL):
+
+```bash
+docker compose up --build
+```
+
+Accès:
+- API: `http://localhost:8080`
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- Health: `http://localhost:8080/actuator/health`
+
+Arrêt:
+
+```bash
+docker compose down
+```
+
+Pour supprimer aussi le volume PostgreSQL:
+
+```bash
+docker compose down -v
+```
+
+## CI/CD (GitHub Actions)
+
+Le workflow est défini dans `.github/workflows/ci.yml`.
+
+Comportement:
+- Déclenchement sur `push` (toutes branches) et `pull_request` vers `main`
+- Matrice Java: 17 et 21
+- Exécution: `mvn -B clean verify`
+- Upload artifacts (Java 17 uniquement):
+  - `master-annonce-jar` -> `target/masterannonce.jar`
+  - `jacoco-report` -> `target/site/jacoco/`
+- Job Docker sur `main`:
+  - build de l'image `masterannonce:latest`
+  - export en artifact `masterannonce-docker-image`
+
+Choix base de tests en CI:
+- H2 in-memory (profil `test`) est utilisée pour garder une pipeline simple et stable.
+- Les tests existants sont déjà câblés en Spring Boot avec `application-test.yml`.

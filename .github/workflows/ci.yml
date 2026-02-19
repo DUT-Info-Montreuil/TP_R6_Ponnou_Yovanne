@@ -1,0 +1,64 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java-version: [17, 21]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java ${{ matrix.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java-version }}
+          cache: maven
+
+      - name: Build and test
+        run: mvn -B clean verify
+
+      - name: Upload JAR artifact
+        if: matrix.java-version == 17
+        uses: actions/upload-artifact@v4
+        with:
+          name: master-annonce-jar
+          path: target/masterannonce.jar
+
+      - name: Upload JaCoCo report
+        if: matrix.java-version == 17
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t masterannonce:latest .
+
+      - name: Save Docker image
+        run: docker save masterannonce:latest | gzip > masterannonce-docker.tar.gz
+
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: masterannonce-docker-image
+          path: masterannonce-docker.tar.gz
