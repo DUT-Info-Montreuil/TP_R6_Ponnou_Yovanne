@@ -14,7 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.dto.AnnonceCreateDTO;
@@ -107,14 +107,14 @@ public class AnnonceController {
             @ApiResponse(responseCode = "500", description = "Erreur interne",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<AnnonceDTO> create(@Valid @RequestBody AnnonceCreateDTO dto, Authentication authentication) {
-        Long userId = getAuthenticatedUserId(authentication);
+    public ResponseEntity<AnnonceDTO> create(@Valid @RequestBody AnnonceCreateDTO dto,
+                                             @AuthenticationPrincipal AuthenticatedUser user) {
         Annonce created = annonceService.create(
                 dto.getTitle(),
                 dto.getDescription(),
                 dto.getAdress(),
                 dto.getMail(),
-                userId,
+                user.getUserId(),
                 dto.getCategoryId()
         );
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
@@ -140,11 +140,10 @@ public class AnnonceController {
     })
     public ResponseEntity<AnnonceDTO> update(@PathVariable Long id,
                                              @Valid @RequestBody AnnonceUpdateDTO dto,
-                                             Authentication authentication) {
-        Long userId = getAuthenticatedUserId(authentication);
+                                             @AuthenticationPrincipal AuthenticatedUser user) {
         Annonce updated = annonceService.update(
                 id,
-                userId,
+                user.getUserId(),
                 dto.getTitle(),
                 dto.getDescription(),
                 dto.getAdress(),
@@ -166,9 +165,9 @@ public class AnnonceController {
             @ApiResponse(responseCode = "409", description = "Conflit metier",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<Void> delete(@PathVariable Long id, Authentication authentication) {
-        Long userId = getAuthenticatedUserId(authentication);
-        annonceService.delete(id, userId);
+    public ResponseEntity<Void> delete(@PathVariable Long id,
+                                       @AuthenticationPrincipal AuthenticatedUser user) {
+        annonceService.delete(id, user.getUserId());
         return ResponseEntity.noContent().build();
     }
 
@@ -188,9 +187,8 @@ public class AnnonceController {
     })
     public ResponseEntity<AnnonceDTO> patch(@PathVariable Long id,
                                             @Valid @RequestBody AnnoncePatchDTO dto,
-                                            Authentication authentication) {
-        Long userId = getAuthenticatedUserId(authentication);
-        Annonce patched = annonceService.patch(id, userId, dto);
+                                            @AuthenticationPrincipal AuthenticatedUser user) {
+        Annonce patched = annonceService.patch(id, user.getUserId(), dto);
         return ResponseEntity.ok(annonceMapper.toDTO(patched));
     }
 
@@ -206,9 +204,9 @@ public class AnnonceController {
             @ApiResponse(responseCode = "409", description = "Conflit metier",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<AnnonceDTO> publish(@PathVariable Long id, Authentication authentication) {
-        Long userId = getAuthenticatedUserId(authentication);
-        Annonce published = annonceService.publish(id, userId);
+    public ResponseEntity<AnnonceDTO> publish(@PathVariable Long id,
+                                              @AuthenticationPrincipal AuthenticatedUser user) {
+        Annonce published = annonceService.publish(id, user.getUserId());
         return ResponseEntity.ok(annonceMapper.toDTO(published));
     }
 
@@ -225,18 +223,10 @@ public class AnnonceController {
             @ApiResponse(responseCode = "409", description = "Conflit metier",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<AnnonceDTO> archive(@PathVariable Long id, Authentication authentication) {
-        Long userId = getAuthenticatedUserId(authentication);
-        Annonce archived = annonceService.archive(id, userId);
+    public ResponseEntity<AnnonceDTO> archive(@PathVariable Long id,
+                                              @AuthenticationPrincipal AuthenticatedUser user) {
+        Annonce archived = annonceService.archive(id, user.getUserId());
         return ResponseEntity.ok(annonceMapper.toDTO(archived));
-    }
-
-    private Long getAuthenticatedUserId(Authentication authentication) {
-        Object principal = authentication != null ? authentication.getPrincipal() : null;
-        if (principal instanceof AuthenticatedUser user) {
-            return user.getUserId();
-        }
-        throw new ResourceNotFoundException("Utilisateur authentifie introuvable");
     }
 
     private Sort parseSort(String sort) {
