@@ -23,5 +23,6 @@ public interface UserMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "annonces", ignore = true)
     @Mapping(target = "password", ignore = true)
+    @Mapping(target = "role", ignore = true)
     void updateUserFromPatchDTO(UserPatchDTO dto, @MappingTarget User entity);
 }

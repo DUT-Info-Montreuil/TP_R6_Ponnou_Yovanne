@@ -47,7 +47,7 @@ public class AuthController {
     }
 
     private ResponseEntity<TokenDTO> successResponse(User user) {
-        String token = jwtService.generateToken(user.getId(), user.getUsername(), "ROLE_USER");
+        String token = jwtService.generateToken(user.getId(), user.getUsername(), user.getRole());
         log.info("Login successful username={}", user.getUsername());
         return ResponseEntity.ok(new TokenDTO(token, user.getUsername()));
     }

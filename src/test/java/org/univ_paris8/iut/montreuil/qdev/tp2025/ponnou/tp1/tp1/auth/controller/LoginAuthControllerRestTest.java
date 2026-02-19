@@ -2,71 +2,101 @@ package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.controller
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
 
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.util.Map;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class LoginAuthControllerRestTest extends AuthControllerRestTestBase {
 
     @Test
-    @DisplayName("POST /login -> 200 avec token si identifiants valides")
-    void login_shouldReturn200WithToken() {
-        Response response = jerseyTest.target("/login")
-                .request(MediaType.APPLICATION_JSON)
-                .post(Entity.json(Map.of("username", "testuser", "password", "password123")));
+    @DisplayName("login_shouldReturn200WithToken")
+    void login_shouldReturn200WithToken() throws Exception {
+        User user = new User("testuser", "test@test.com", "hashed-password");
+        user.setId(1L);
+        user.setRole("ROLE_ADMIN");
 
-        assertEquals(200, response.getStatus());
-        Map<?, ?> json = response.readEntity(Map.class);
-        assertNotNull(json.get("token"));
-        assertEquals("testuser", json.get("username"));
+        when(userService.authenticate(eq("testuser"), eq("password123"))).thenReturn(Optional.of(user));
+        when(jwtService.generateToken(1L, "testuser", "ROLE_ADMIN")).thenReturn("jwt-token");
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "testuser",
+                                  "password": "password123"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("jwt-token"))
+                .andExpect(jsonPath("$.username").value("testuser"));
     }
 
     @Test
-    @DisplayName("POST /login -> 401 si mot de passe incorrect")
-    void login_shouldReturn401_whenWrongPassword() {
-        Response response = jerseyTest.target("/login")
-                .request(MediaType.APPLICATION_JSON)
-                .post(Entity.json(Map.of("username", "testuser", "password", "wrongpassword")));
+    @DisplayName("login_shouldReturn401_whenWrongPassword")
+    void login_shouldReturn401_whenWrongPassword() throws Exception {
+        when(userService.authenticate(eq("testuser"), eq("wrongpassword"))).thenReturn(Optional.empty());
 
-        assertEquals(401, response.getStatus());
-        Map<?, ?> error = response.readEntity(Map.class);
-        assertEquals("UNAUTHORIZED", error.get("error"));
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "testuser",
+                                  "password": "wrongpassword"
+                                }
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value("UNAUTHORIZED"));
     }
 
     @Test
-    @DisplayName("POST /login -> 401 si utilisateur inexistant")
-    void login_shouldReturn401_whenUserNotFound() {
-        Response response = jerseyTest.target("/login")
-                .request(MediaType.APPLICATION_JSON)
-                .post(Entity.json(Map.of("username", "unknown", "password", "password123")));
+    @DisplayName("login_shouldReturn401_whenUserNotFound")
+    void login_shouldReturn401_whenUserNotFound() throws Exception {
+        when(userService.authenticate(eq("unknown"), eq("password123"))).thenReturn(Optional.empty());
 
-        assertEquals(401, response.getStatus());
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "unknown",
+                                  "password": "password123"
+                                }
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value("UNAUTHORIZED"));
     }
 
     @Test
-    @DisplayName("POST /login -> 400 si username manquant")
-    void login_shouldReturn400_whenUsernameMissing() {
-        Response response = jerseyTest.target("/login")
-                .request(MediaType.APPLICATION_JSON)
-                .post(Entity.json(Map.of("password", "password123")));
-
-        assertEquals(400, response.getStatus());
-        Map<?, ?> error = response.readEntity(Map.class);
-        assertEquals("VALIDATION_ERROR", error.get("error"));
+    @DisplayName("login_shouldReturn400_whenUsernameMissing")
+    void login_shouldReturn400_whenUsernameMissing() throws Exception {
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "password": "password123"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"));
     }
 
     @Test
-    @DisplayName("POST /login -> 400 si password manquant")
-    void login_shouldReturn400_whenPasswordMissing() {
-        Response response = jerseyTest.target("/login")
-                .request(MediaType.APPLICATION_JSON)
-                .post(Entity.json(Map.of("username", "testuser")));
-
-        assertEquals(400, response.getStatus());
+    @DisplayName("login_shouldReturn400_whenPasswordMissing")
+    void login_shouldReturn400_whenPasswordMissing() throws Exception {
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "testuser"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"));
     }
 }

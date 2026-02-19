@@ -39,6 +39,9 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @Column(nullable = false, length = 20)
+    private String role = "ROLE_USER";
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Timestamp createdAt;
 
@@ -52,6 +55,7 @@ public class User {
         this.username = username;
         this.email = email;
         this.password = password;
+        this.role = "ROLE_USER";
     }
 
     @PrePersist
