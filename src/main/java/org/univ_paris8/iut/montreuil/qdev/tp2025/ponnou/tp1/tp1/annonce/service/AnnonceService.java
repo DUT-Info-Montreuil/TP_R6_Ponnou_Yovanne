@@ -1,7 +1,6 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.service;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -23,7 +22,6 @@ import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.repository.
 import java.sql.Timestamp;
 import java.util.Optional;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AnnonceService {
@@ -36,8 +34,6 @@ public class AnnonceService {
     @Transactional
     public Annonce create(String title, String description, String adress, String mail,
                           Long authenticatedUserId, Long categoryId) {
-        log.info("Creating annonce title={} by userId={}", title, authenticatedUserId);
-
         User author = userRepository.findById(authenticatedUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouve"));
 
@@ -49,16 +45,12 @@ public class AnnonceService {
         annonce.setCategory(category);
         annonce.setStatus(AnnonceStatus.DRAFT);
 
-        Annonce saved = annonceRepository.save(annonce);
-        log.info("Annonce created id={}", saved.getId());
-        return saved;
+        return annonceRepository.save(annonce);
     }
 
     @Transactional
     public Annonce update(Long id, Long authenticatedUserId, String title, String description,
                           String adress, String mail, Long categoryId) {
-        log.info("Updating annonce id={} by userId={}", id, authenticatedUserId);
-
         Annonce annonce = annonceRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvee"));
 
@@ -74,15 +66,11 @@ public class AnnonceService {
         annonce.setMail(mail);
         annonce.setCategory(category);
 
-        Annonce updated = annonceRepository.save(annonce);
-        log.info("Annonce updated id={}", id);
-        return updated;
+        return annonceRepository.save(annonce);
     }
 
     @Transactional
     public Annonce publish(Long id, Long authenticatedUserId) {
-        log.info("Publishing annonce id={} by userId={}", id, authenticatedUserId);
-
         Annonce annonce = annonceRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvee"));
 
@@ -93,30 +81,22 @@ public class AnnonceService {
         }
 
         annonce.setStatus(AnnonceStatus.PUBLISHED);
-        Annonce updated = annonceRepository.save(annonce);
-        log.info("Annonce published id={}", id);
-        return updated;
+        return annonceRepository.save(annonce);
     }
 
     @Transactional
     public Annonce archive(Long id, Long authenticatedUserId) {
-        log.info("Archiving annonce id={} by userId={}", id, authenticatedUserId);
-
         Annonce annonce = annonceRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvee"));
 
         checkOwnership(annonce, authenticatedUserId);
 
         annonce.setStatus(AnnonceStatus.ARCHIVED);
-        Annonce updated = annonceRepository.save(annonce);
-        log.info("Annonce archived id={}", id);
-        return updated;
+        return annonceRepository.save(annonce);
     }
 
     @Transactional
     public Annonce patch(Long id, Long authenticatedUserId, AnnoncePatchDTO dto) {
-        log.info("Patching annonce id={} by userId={}", id, authenticatedUserId);
-
         Annonce annonce = annonceRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvee"));
 
@@ -130,15 +110,11 @@ public class AnnonceService {
             annonce.setCategory(category);
         }
 
-        Annonce updated = annonceRepository.save(annonce);
-        log.info("Annonce patched id={}", id);
-        return updated;
+        return annonceRepository.save(annonce);
     }
 
     @Transactional
     public void delete(Long id, Long authenticatedUserId) {
-        log.info("Deleting annonce id={} by userId={}", id, authenticatedUserId);
-
         Annonce annonce = annonceRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvee"));
 
@@ -150,7 +126,6 @@ public class AnnonceService {
         }
 
         annonceRepository.delete(annonce);
-        log.info("Annonce deleted id={}", id);
     }
 
     @Transactional(readOnly = true)

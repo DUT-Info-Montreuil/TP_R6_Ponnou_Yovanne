@@ -157,6 +157,7 @@
                         <testInclude>**/annonce/service/SearchAnnonceServiceTest.java</testInclude>
                         <testInclude>**/annonce/controller/AnnonceControllerRestTestBase.java</testInclude>
                         <testInclude>**/annonce/controller/GetAnnonceControllerRestTest.java</testInclude>
+                        <testInclude>**/category/controller/CategorySecurityControllerRestTest.java</testInclude>
                         <testInclude>**/auth/controller/AuthControllerRestTestBase.java</testInclude>
                         <testInclude>**/auth/controller/LoginAuthControllerRestTest.java</testInclude>
                         <testInclude>**/auth/integration/AuthFlowIntegrationTest.java</testInclude>

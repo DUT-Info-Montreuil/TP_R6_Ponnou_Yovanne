@@ -42,3 +42,7 @@ springdoc:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+logging:
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%X{correlationId:-}] %-5level %logger{36} - %msg%n"

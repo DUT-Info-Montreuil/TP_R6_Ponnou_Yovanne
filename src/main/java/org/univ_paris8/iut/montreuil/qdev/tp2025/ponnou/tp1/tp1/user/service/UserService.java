@@ -1,7 +1,6 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.service;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -15,7 +14,6 @@ import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.repository.
 
 import java.util.Optional;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -25,33 +23,22 @@ public class UserService {
 
     @Transactional
     public User create(String username, String email, String password) {
-        log.info("Creating user username={}", username);
-
         if (userRepository.existsByUsername(username)) {
-            log.warn("Username already exists username={}", username);
             throw new IllegalArgumentException("Ce nom d'utilisateur existe deja");
         }
 
         if (userRepository.existsByEmail(email)) {
-            log.warn("Email already exists email={}", email);
             throw new IllegalArgumentException("Cet email existe deja");
         }
 
         User user = new User(username, email, PasswordUtils.hash(password));
-        User saved = userRepository.save(user);
-        log.info("User created id={}", saved.getId());
-        return saved;
+        return userRepository.save(user);
     }
 
     @Transactional
     public User update(Long id, String username, String email) {
-        log.info("Updating user id={}", id);
-
         User user = userRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.warn("User not found id={}", id);
-                    return new ResourceNotFoundException("Utilisateur non trouve");
-                });
+                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouve"));
 
         if (!user.getUsername().equals(username) && userRepository.existsByUsername(username)) {
             throw new IllegalArgumentException("Ce nom d'utilisateur existe deja");
@@ -64,20 +51,13 @@ public class UserService {
         user.setUsername(username);
         user.setEmail(email);
 
-        User updated = userRepository.save(user);
-        log.info("User updated id={}", id);
-        return updated;
+        return userRepository.save(user);
     }
 
     @Transactional
     public User patch(Long id, UserPatchDTO dto) {
-        log.info("Patching user id={}", id);
-
         User user = userRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.warn("User not found id={}", id);
-                    return new ResourceNotFoundException("Utilisateur non trouve");
-                });
+                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouve"));
 
         if (dto.getUsername() != null && !user.getUsername().equals(dto.getUsername())
                 && userRepository.existsByUsername(dto.getUsername())) {
@@ -94,19 +74,15 @@ public class UserService {
             user.setPassword(PasswordUtils.hash(dto.getPassword()));
         }
 
-        User updated = userRepository.save(user);
-        log.info("User patched id={}", id);
-        return updated;
+        return userRepository.save(user);
     }
 
     @Transactional
     public void delete(Long id) {
-        log.info("Deleting user id={}", id);
         if (!userRepository.existsById(id)) {
             throw new ResourceNotFoundException("Utilisateur non trouve");
         }
         userRepository.deleteById(id);
-        log.info("User deleted id={}", id);
     }
 
     @Transactional(readOnly = true)
@@ -125,13 +101,10 @@ public class UserService {
     }
 
     public Optional<User> authenticate(String username, String password) {
-        log.debug("Authenticating user username={}", username);
         Optional<User> user = userRepository.findByUsername(username);
         if (user.isPresent() && PasswordUtils.matches(password, user.get().getPassword())) {
-            log.info("Authentication successful username={}", username);
             return user;
         }
-        log.warn("Authentication failed username={}", username);
         return Optional.empty();
     }
 }

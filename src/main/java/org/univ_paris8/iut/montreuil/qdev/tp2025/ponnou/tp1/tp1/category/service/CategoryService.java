@@ -1,7 +1,6 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.service;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -17,7 +16,6 @@ import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception
 import java.util.List;
 import java.util.Optional;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CategoryService {
@@ -28,22 +26,16 @@ public class CategoryService {
 
     @Transactional
     public Category create(String label) {
-        log.info("Creating category label={}", label);
-
         if (categoryRepository.existsByLabel(label)) {
             throw new IllegalArgumentException("Cette categorie existe deja");
         }
 
         Category category = new Category(label);
-        Category saved = categoryRepository.save(category);
-        log.info("Category created id={}", saved.getId());
-        return saved;
+        return categoryRepository.save(category);
     }
 
     @Transactional
     public Category update(Long id, String label) {
-        log.info("Updating category id={} label={}", id, label);
-
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Categorie non trouvee"));
 
@@ -52,15 +44,11 @@ public class CategoryService {
         }
 
         category.setLabel(label);
-        Category updated = categoryRepository.save(category);
-        log.info("Category updated id={}", id);
-        return updated;
+        return categoryRepository.save(category);
     }
 
     @Transactional
     public Category patch(Long id, CategoryPatchDTO dto) {
-        log.info("Patching category id={}", id);
-
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Categorie non trouvee"));
 
@@ -70,15 +58,11 @@ public class CategoryService {
         }
 
         categoryMapper.updateCategoryFromPatchDTO(dto, category);
-        Category updated = categoryRepository.save(category);
-        log.info("Category patched id={}", id);
-        return updated;
+        return categoryRepository.save(category);
     }
 
     @Transactional
     public void delete(Long id) {
-        log.info("Deleting category id={}", id);
-
         if (!categoryRepository.existsById(id)) {
             throw new ResourceNotFoundException("Categorie non trouvee");
         }
@@ -88,7 +72,6 @@ public class CategoryService {
         }
 
         categoryRepository.deleteById(id);
-        log.info("Category deleted id={}", id);
     }
 
     @Transactional(readOnly = true)

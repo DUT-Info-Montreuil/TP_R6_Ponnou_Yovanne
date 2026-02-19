@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.dto.CategoryCreateDTO;
@@ -62,6 +63,7 @@ public class CategoryController {
 
     @PostMapping
     @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Creer une categorie")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Categorie creee"),
@@ -77,6 +79,7 @@ public class CategoryController {
 
     @PutMapping("/{id}")
     @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Mettre a jour une categorie")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Categorie mise a jour"),
@@ -90,6 +93,7 @@ public class CategoryController {
 
     @DeleteMapping("/{id}")
     @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Supprimer une categorie")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Categorie supprimee"),
@@ -102,6 +106,7 @@ public class CategoryController {
 
     @PatchMapping("/{id}")
     @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Patch partiel d'une categorie")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Categorie mise a jour"),
