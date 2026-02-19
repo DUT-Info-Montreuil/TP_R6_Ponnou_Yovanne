@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.config.PasswordUtils;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ResourceNotFoundException;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.dto.UserPatchDTO;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.mapper.UserMapper;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.repository.UserRepository;
 
@@ -19,6 +21,7 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     @Transactional
     public User create(String username, String email, String password) {
@@ -26,12 +29,12 @@ public class UserService {
 
         if (userRepository.existsByUsername(username)) {
             log.warn("Username already exists username={}", username);
-            throw new IllegalArgumentException("Ce nom d'utilisateur existe déjà");
+            throw new IllegalArgumentException("Ce nom d'utilisateur existe deja");
         }
 
         if (userRepository.existsByEmail(email)) {
             log.warn("Email already exists email={}", email);
-            throw new IllegalArgumentException("Cet email existe déjà");
+            throw new IllegalArgumentException("Cet email existe deja");
         }
 
         User user = new User(username, email, PasswordUtils.hash(password));
@@ -47,15 +50,15 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> {
                     log.warn("User not found id={}", id);
-                    return new ResourceNotFoundException("Utilisateur non trouvé");
+                    return new ResourceNotFoundException("Utilisateur non trouve");
                 });
 
         if (!user.getUsername().equals(username) && userRepository.existsByUsername(username)) {
-            throw new IllegalArgumentException("Ce nom d'utilisateur existe déjà");
+            throw new IllegalArgumentException("Ce nom d'utilisateur existe deja");
         }
 
         if (!user.getEmail().equals(email) && userRepository.existsByEmail(email)) {
-            throw new IllegalArgumentException("Cet email existe déjà");
+            throw new IllegalArgumentException("Cet email existe deja");
         }
 
         user.setUsername(username);
@@ -67,29 +70,28 @@ public class UserService {
     }
 
     @Transactional
-    public User patch(Long id, String username, String email, String password) {
+    public User patch(Long id, UserPatchDTO dto) {
         log.info("Patching user id={}", id);
 
         User user = userRepository.findById(id)
                 .orElseThrow(() -> {
                     log.warn("User not found id={}", id);
-                    return new ResourceNotFoundException("Utilisateur non trouvé");
+                    return new ResourceNotFoundException("Utilisateur non trouve");
                 });
 
-        if (username != null) {
-            if (!user.getUsername().equals(username) && userRepository.existsByUsername(username)) {
-                throw new IllegalArgumentException("Ce nom d'utilisateur existe déjà");
-            }
-            user.setUsername(username);
+        if (dto.getUsername() != null && !user.getUsername().equals(dto.getUsername())
+                && userRepository.existsByUsername(dto.getUsername())) {
+            throw new IllegalArgumentException("Ce nom d'utilisateur existe deja");
         }
-        if (email != null) {
-            if (!user.getEmail().equals(email) && userRepository.existsByEmail(email)) {
-                throw new IllegalArgumentException("Cet email existe déjà");
-            }
-            user.setEmail(email);
+
+        if (dto.getEmail() != null && !user.getEmail().equals(dto.getEmail())
+                && userRepository.existsByEmail(dto.getEmail())) {
+            throw new IllegalArgumentException("Cet email existe deja");
         }
-        if (password != null) {
-            user.setPassword(PasswordUtils.hash(password));
+
+        userMapper.updateUserFromPatchDTO(dto, user);
+        if (dto.getPassword() != null) {
+            user.setPassword(PasswordUtils.hash(dto.getPassword()));
         }
 
         User updated = userRepository.save(user);
@@ -101,7 +103,7 @@ public class UserService {
     public void delete(Long id) {
         log.info("Deleting user id={}", id);
         if (!userRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Utilisateur non trouvé");
+            throw new ResourceNotFoundException("Utilisateur non trouve");
         }
         userRepository.deleteById(id);
         log.info("User deleted id={}", id);

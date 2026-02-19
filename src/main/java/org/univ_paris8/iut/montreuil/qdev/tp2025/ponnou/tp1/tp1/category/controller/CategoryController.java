@@ -32,6 +32,7 @@ import java.net.URI;
 public class CategoryController {
 
     private final CategoryService categoryService;
+    private final CategoryMapper categoryMapper;
 
     @GetMapping
     @Operation(summary = "Lister les categories")
@@ -43,7 +44,7 @@ public class CategoryController {
             @RequestParam(defaultValue = "10") int size) {
         Page<Category> categories = categoryService.findAllPaginated(PageRequest.of(page, size, Sort.by("label").ascending()));
         return ResponseEntity.ok(new PaginatedResponse<>(
-                categories.map(CategoryMapper::toDTO).getContent(),
+                categories.map(categoryMapper::toDTO).getContent(),
                 page, size, categories.getTotalElements()));
     }
 
@@ -55,8 +56,8 @@ public class CategoryController {
     })
     public ResponseEntity<CategoryDTO> getById(@PathVariable Long id) {
         Category category = categoryService.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Catégorie non trouvée avec l'id : " + id));
-        return ResponseEntity.ok(CategoryMapper.toDTO(category));
+                .orElseThrow(() -> new ResourceNotFoundException("Categorie non trouvee avec l'id : " + id));
+        return ResponseEntity.ok(categoryMapper.toDTO(category));
     }
 
     @PostMapping
@@ -68,7 +69,7 @@ public class CategoryController {
     })
     public ResponseEntity<CategoryDTO> create(@Valid @RequestBody CategoryCreateDTO dto) {
         Category created = categoryService.create(dto.getLabel());
-        CategoryDTO responseDTO = CategoryMapper.toDTO(created);
+        CategoryDTO responseDTO = categoryMapper.toDTO(created);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}").buildAndExpand(created.getId()).toUri();
         return ResponseEntity.created(location).body(responseDTO);
@@ -84,7 +85,7 @@ public class CategoryController {
     })
     public ResponseEntity<CategoryDTO> update(@PathVariable Long id, @Valid @RequestBody CategoryUpdateDTO dto) {
         Category updated = categoryService.update(id, dto.getLabel());
-        return ResponseEntity.ok(CategoryMapper.toDTO(updated));
+        return ResponseEntity.ok(categoryMapper.toDTO(updated));
     }
 
     @DeleteMapping("/{id}")
@@ -108,7 +109,7 @@ public class CategoryController {
             @ApiResponse(responseCode = "404", description = "Categorie non trouvee")
     })
     public ResponseEntity<CategoryDTO> patch(@PathVariable Long id, @Valid @RequestBody CategoryPatchDTO dto) {
-        Category patched = categoryService.patch(id, dto.getLabel());
-        return ResponseEntity.ok(CategoryMapper.toDTO(patched));
+        Category patched = categoryService.patch(id, dto);
+        return ResponseEntity.ok(categoryMapper.toDTO(patched));
     }
 }

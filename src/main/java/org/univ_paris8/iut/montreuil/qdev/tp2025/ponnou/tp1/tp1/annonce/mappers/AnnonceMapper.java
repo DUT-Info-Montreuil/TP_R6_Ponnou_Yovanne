@@ -1,33 +1,39 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.mappers;
 
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.Named;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.dto.AnnonceDTO;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.dto.AnnoncePatchDTO;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.Annonce;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.AnnonceStatus;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
-public final class AnnonceMapper {
+@Mapper(componentModel = "spring")
+public interface AnnonceMapper {
 
-    private AnnonceMapper() {
-    }
+    @Mapping(source = "status", target = "status", qualifiedByName = "statusToString")
+    @Mapping(source = "author.username", target = "authorUsername")
+    @Mapping(source = "category.label", target = "categoryLabel")
+    AnnonceDTO toDTO(Annonce entity);
 
-    public static AnnonceDTO toDTO(Annonce entity) {
-        return AnnonceDTO.builder()
-                .id(entity.getId())
-                .title(entity.getTitle())
-                .description(entity.getDescription())
-                .adress(entity.getAdress())
-                .mail(entity.getMail())
-                .date(entity.getDate())
-                .status(entity.getStatus() != null ? entity.getStatus().name() : null)
-                .authorUsername(entity.getAuthor() != null ? entity.getAuthor().getUsername() : null)
-                .categoryLabel(entity.getCategory() != null ? entity.getCategory().getLabel() : null)
-                .build();
-    }
+    List<AnnonceDTO> toDTOList(List<Annonce> entities);
 
-    public static List<AnnonceDTO> toDTOList(List<Annonce> entities) {
-        return entities.stream()
-                .map(AnnonceMapper::toDTO)
-                .collect(Collectors.toList());
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "date", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "author", ignore = true)
+    @Mapping(target = "category", ignore = true)
+    void updateAnnonceFromPatchDTO(AnnoncePatchDTO dto, @MappingTarget Annonce entity);
+
+    @Named("statusToString")
+    default String statusToString(AnnonceStatus status) {
+        return status != null ? status.name() : null;
     }
 }

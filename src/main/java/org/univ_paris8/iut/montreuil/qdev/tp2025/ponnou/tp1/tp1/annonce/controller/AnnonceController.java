@@ -35,6 +35,7 @@ import java.net.URI;
 public class AnnonceController {
 
     private final AnnonceService annonceService;
+    private final AnnonceMapper annonceMapper;
 
     @GetMapping
     @Operation(summary = "Lister les annonces", description = "Retourne la liste paginee des annonces.")
@@ -52,7 +53,7 @@ public class AnnonceController {
         Page<Annonce> annonces = annonceService.searchWithFilters(
                 keyword, categoryId, authorId, status, PageRequest.of(page, size, Sort.by("date").descending()));
         return ResponseEntity.ok(new PaginatedResponse<>(
-                annonces.map(AnnonceMapper::toDTO).getContent(),
+                annonces.map(annonceMapper::toDTO).getContent(),
                 page,
                 size,
                 annonces.getTotalElements()));
@@ -68,7 +69,7 @@ public class AnnonceController {
     public ResponseEntity<AnnonceDTO> getById(@PathVariable Long id) {
         Annonce annonce = annonceService.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvee avec l'id : " + id));
-        return ResponseEntity.ok(AnnonceMapper.toDTO(annonce));
+        return ResponseEntity.ok(annonceMapper.toDTO(annonce));
     }
 
     @PostMapping
@@ -95,7 +96,7 @@ public class AnnonceController {
                 .path("/{id}")
                 .buildAndExpand(created.getId())
                 .toUri();
-        return ResponseEntity.created(location).body(AnnonceMapper.toDTO(created));
+        return ResponseEntity.created(location).body(annonceMapper.toDTO(created));
     }
 
     @PutMapping("/{id}")
@@ -114,7 +115,7 @@ public class AnnonceController {
                 dto.getMail(),
                 dto.getCategoryId()
         );
-        return ResponseEntity.ok(AnnonceMapper.toDTO(updated));
+        return ResponseEntity.ok(annonceMapper.toDTO(updated));
     }
 
     @DeleteMapping("/{id}")
@@ -133,16 +134,8 @@ public class AnnonceController {
                                             @Valid @RequestBody AnnoncePatchDTO dto,
                                             Authentication authentication) {
         Long userId = getAuthenticatedUserId(authentication);
-        Annonce patched = annonceService.patch(
-                id,
-                userId,
-                dto.getTitle(),
-                dto.getDescription(),
-                dto.getAdress(),
-                dto.getMail(),
-                dto.getCategoryId()
-        );
-        return ResponseEntity.ok(AnnonceMapper.toDTO(patched));
+        Annonce patched = annonceService.patch(id, userId, dto);
+        return ResponseEntity.ok(annonceMapper.toDTO(patched));
     }
 
     @PutMapping("/{id}/publish")
@@ -151,7 +144,7 @@ public class AnnonceController {
     public ResponseEntity<AnnonceDTO> publish(@PathVariable Long id, Authentication authentication) {
         Long userId = getAuthenticatedUserId(authentication);
         Annonce published = annonceService.publish(id, userId);
-        return ResponseEntity.ok(AnnonceMapper.toDTO(published));
+        return ResponseEntity.ok(annonceMapper.toDTO(published));
     }
 
     @PutMapping("/{id}/archive")
@@ -160,7 +153,7 @@ public class AnnonceController {
     public ResponseEntity<AnnonceDTO> archive(@PathVariable Long id, Authentication authentication) {
         Long userId = getAuthenticatedUserId(authentication);
         Annonce archived = annonceService.archive(id, userId);
-        return ResponseEntity.ok(AnnonceMapper.toDTO(archived));
+        return ResponseEntity.ok(annonceMapper.toDTO(archived));
     }
 
     private Long getAuthenticatedUserId(Authentication authentication) {

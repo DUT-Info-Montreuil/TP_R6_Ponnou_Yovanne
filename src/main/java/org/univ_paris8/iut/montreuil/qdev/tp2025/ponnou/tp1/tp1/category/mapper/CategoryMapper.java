@@ -1,26 +1,25 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.mapper;
 
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.dto.CategoryDTO;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.dto.CategoryPatchDTO;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.Category;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
-public final class CategoryMapper {
+@Mapper(componentModel = "spring")
+public interface CategoryMapper {
 
-    private CategoryMapper() {
-    }
+    CategoryDTO toDTO(Category entity);
 
-    public static CategoryDTO toDTO(Category entity) {
-        return CategoryDTO.builder()
-                .id(entity.getId())
-                .label(entity.getLabel())
-                .build();
-    }
+    List<CategoryDTO> toDTOList(List<Category> entities);
 
-    public static List<CategoryDTO> toDTOList(List<Category> entities) {
-        return entities.stream()
-                .map(CategoryMapper::toDTO)
-                .collect(Collectors.toList());
-    }
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "annonces", ignore = true)
+    void updateCategoryFromPatchDTO(CategoryPatchDTO dto, @MappingTarget Category entity);
 }

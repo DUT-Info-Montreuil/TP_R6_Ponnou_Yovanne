@@ -1,28 +1,27 @@
 package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.mapper;
 
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.dto.UserDTO;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.dto.UserPatchDTO;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
-public final class UserMapper {
+@Mapper(componentModel = "spring")
+public interface UserMapper {
 
-    private UserMapper() {
-    }
+    UserDTO toDTO(User entity);
 
-    public static UserDTO toDTO(User entity) {
-        return UserDTO.builder()
-                .id(entity.getId())
-                .username(entity.getUsername())
-                .email(entity.getEmail())
-                .createdAt(entity.getCreatedAt())
-                .build();
-    }
+    List<UserDTO> toDTOList(List<User> entities);
 
-    public static List<UserDTO> toDTOList(List<User> entities) {
-        return entities.stream()
-                .map(UserMapper::toDTO)
-                .collect(Collectors.toList());
-    }
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "annonces", ignore = true)
+    @Mapping(target = "password", ignore = true)
+    void updateUserFromPatchDTO(UserPatchDTO dto, @MappingTarget User entity);
 }

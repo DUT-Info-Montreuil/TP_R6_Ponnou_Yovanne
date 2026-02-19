@@ -4,8 +4,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.dto.AnnoncePatchDTO;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.mappers.AnnonceMapper;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.Annonce;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.AnnonceStatus;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.repository.AnnonceRepository;
@@ -18,7 +21,6 @@ import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.repository.UserRepository;
 
 import java.util.Optional;
-import org.springframework.data.jpa.domain.Specification;
 
 @Slf4j
 @Service
@@ -28,6 +30,7 @@ public class AnnonceService {
     private final AnnonceRepository annonceRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
+    private final AnnonceMapper annonceMapper;
 
     @Transactional
     public Annonce create(String title, String description, String adress, String mail,
@@ -35,10 +38,10 @@ public class AnnonceService {
         log.info("Creating annonce title={} by userId={}", title, authenticatedUserId);
 
         User author = userRepository.findById(authenticatedUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé"));
+                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouve"));
 
         Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new ResourceNotFoundException("Catégorie non trouvée"));
+                .orElseThrow(() -> new ResourceNotFoundException("Categorie non trouvee"));
 
         Annonce annonce = new Annonce(title, description, adress, mail);
         annonce.setAuthor(author);
@@ -56,13 +59,13 @@ public class AnnonceService {
         log.info("Updating annonce id={} by userId={}", id, authenticatedUserId);
 
         Annonce annonce = annonceRepository.findByIdWithRelations(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvée"));
+                .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvee"));
 
         checkOwnership(annonce, authenticatedUserId);
         checkNotPublished(annonce);
 
         Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new ResourceNotFoundException("Catégorie non trouvée"));
+                .orElseThrow(() -> new ResourceNotFoundException("Categorie non trouvee"));
 
         annonce.setTitle(title);
         annonce.setDescription(description);
@@ -80,12 +83,12 @@ public class AnnonceService {
         log.info("Publishing annonce id={} by userId={}", id, authenticatedUserId);
 
         Annonce annonce = annonceRepository.findByIdWithRelations(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvée"));
+                .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvee"));
 
         checkOwnership(annonce, authenticatedUserId);
 
         if (annonce.getStatus() == AnnonceStatus.ARCHIVED) {
-            throw new IllegalStateException("Impossible de publier une annonce archivée");
+            throw new IllegalStateException("Impossible de publier une annonce archivee");
         }
 
         annonce.setStatus(AnnonceStatus.PUBLISHED);
@@ -99,7 +102,7 @@ public class AnnonceService {
         log.info("Archiving annonce id={} by userId={}", id, authenticatedUserId);
 
         Annonce annonce = annonceRepository.findByIdWithRelations(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvée"));
+                .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvee"));
 
         checkOwnership(annonce, authenticatedUserId);
 
@@ -110,23 +113,19 @@ public class AnnonceService {
     }
 
     @Transactional
-    public Annonce patch(Long id, Long authenticatedUserId, String title, String description,
-                         String adress, String mail, Long categoryId) {
+    public Annonce patch(Long id, Long authenticatedUserId, AnnoncePatchDTO dto) {
         log.info("Patching annonce id={} by userId={}", id, authenticatedUserId);
 
         Annonce annonce = annonceRepository.findByIdWithRelations(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvée"));
+                .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvee"));
 
         checkOwnership(annonce, authenticatedUserId);
         checkNotPublished(annonce);
 
-        if (title != null) annonce.setTitle(title);
-        if (description != null) annonce.setDescription(description);
-        if (adress != null) annonce.setAdress(adress);
-        if (mail != null) annonce.setMail(mail);
-        if (categoryId != null) {
-            Category category = categoryRepository.findById(categoryId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Catégorie non trouvée"));
+        annonceMapper.updateAnnonceFromPatchDTO(dto, annonce);
+        if (dto.getCategoryId() != null) {
+            Category category = categoryRepository.findById(dto.getCategoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Categorie non trouvee"));
             annonce.setCategory(category);
         }
 
@@ -140,13 +139,13 @@ public class AnnonceService {
         log.info("Deleting annonce id={} by userId={}", id, authenticatedUserId);
 
         Annonce annonce = annonceRepository.findByIdWithRelations(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvée"));
+                .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvee"));
 
         checkOwnership(annonce, authenticatedUserId);
 
         if (annonce.getStatus() != AnnonceStatus.ARCHIVED) {
             throw new IllegalStateException(
-                    "L'annonce doit être archivée avant d'être supprimée. Statut actuel : " + annonce.getStatus());
+                    "L'annonce doit etre archivee avant d'etre supprimee. Statut actuel : " + annonce.getStatus());
         }
 
         annonceRepository.delete(annonce);
@@ -185,10 +184,12 @@ public class AnnonceService {
 
     @Transactional(readOnly = true)
     public Page<Annonce> searchWithFilters(String keyword, Long categoryId, Long authorId, AnnonceStatus status, Pageable pageable) {
-        Specification<Annonce> specification = Specification.where(AnnonceSpecifications.hasKeyword(keyword))
-                .and(AnnonceSpecifications.hasCategoryId(categoryId))
-                .and(AnnonceSpecifications.hasAuthorId(authorId))
-                .and(AnnonceSpecifications.hasStatus(status));
+        Specification<Annonce> specification = Specification.allOf(
+                AnnonceSpecifications.hasKeyword(keyword),
+                AnnonceSpecifications.hasCategoryId(categoryId),
+                AnnonceSpecifications.hasAuthorId(authorId),
+                AnnonceSpecifications.hasStatus(status)
+        );
         return annonceRepository.findAll(specification, pageable);
     }
 
@@ -200,7 +201,7 @@ public class AnnonceService {
 
     private void checkNotPublished(Annonce annonce) {
         if (annonce.getStatus() == AnnonceStatus.PUBLISHED) {
-            throw new IllegalStateException("Impossible de modifier une annonce publiée");
+            throw new IllegalStateException("Impossible de modifier une annonce publiee");
         }
     }
 }

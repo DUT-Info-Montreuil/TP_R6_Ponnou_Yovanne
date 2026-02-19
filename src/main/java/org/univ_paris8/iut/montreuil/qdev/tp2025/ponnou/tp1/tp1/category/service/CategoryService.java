@@ -6,8 +6,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.repository.AnnonceRepository;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.AnnonceStatus;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.repository.AnnonceRepository;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.dto.CategoryPatchDTO;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.mapper.CategoryMapper;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.Category;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.repository.CategoryRepository;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ResourceNotFoundException;
@@ -22,13 +24,14 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final AnnonceRepository annonceRepository;
+    private final CategoryMapper categoryMapper;
 
     @Transactional
     public Category create(String label) {
         log.info("Creating category label={}", label);
 
         if (categoryRepository.existsByLabel(label)) {
-            throw new IllegalArgumentException("Cette catégorie existe déjà");
+            throw new IllegalArgumentException("Cette categorie existe deja");
         }
 
         Category category = new Category(label);
@@ -42,10 +45,10 @@ public class CategoryService {
         log.info("Updating category id={} label={}", id, label);
 
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Catégorie non trouvée"));
+                .orElseThrow(() -> new ResourceNotFoundException("Categorie non trouvee"));
 
         if (!category.getLabel().equals(label) && categoryRepository.existsByLabel(label)) {
-            throw new IllegalArgumentException("Cette catégorie existe déjà");
+            throw new IllegalArgumentException("Cette categorie existe deja");
         }
 
         category.setLabel(label);
@@ -55,19 +58,18 @@ public class CategoryService {
     }
 
     @Transactional
-    public Category patch(Long id, String label) {
+    public Category patch(Long id, CategoryPatchDTO dto) {
         log.info("Patching category id={}", id);
 
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Catégorie non trouvée"));
+                .orElseThrow(() -> new ResourceNotFoundException("Categorie non trouvee"));
 
-        if (label != null) {
-            if (!category.getLabel().equals(label) && categoryRepository.existsByLabel(label)) {
-                throw new IllegalArgumentException("Cette catégorie existe déjà");
-            }
-            category.setLabel(label);
+        if (dto.getLabel() != null && !category.getLabel().equals(dto.getLabel())
+                && categoryRepository.existsByLabel(dto.getLabel())) {
+            throw new IllegalArgumentException("Cette categorie existe deja");
         }
 
+        categoryMapper.updateCategoryFromPatchDTO(dto, category);
         Category updated = categoryRepository.save(category);
         log.info("Category patched id={}", id);
         return updated;
@@ -78,11 +80,11 @@ public class CategoryService {
         log.info("Deleting category id={}", id);
 
         if (!categoryRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Catégorie non trouvée");
+            throw new ResourceNotFoundException("Categorie non trouvee");
         }
 
         if (annonceRepository.countByCategoryIdAndStatus(id, AnnonceStatus.PUBLISHED) > 0) {
-            throw new IllegalStateException("Impossible de supprimer une catégorie contenant des annonces");
+            throw new IllegalStateException("Impossible de supprimer une categorie contenant des annonces");
         }
 
         categoryRepository.deleteById(id);

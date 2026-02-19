@@ -32,6 +32,7 @@ import java.net.URI;
 public class UserController {
 
     private final UserService userService;
+    private final UserMapper userMapper;
 
     @GetMapping
     @Operation(summary = "Lister les utilisateurs")
@@ -43,7 +44,7 @@ public class UserController {
             @RequestParam(defaultValue = "10") int size) {
         Page<User> users = userService.findAllPaginated(PageRequest.of(page, size, Sort.by("createdAt").descending()));
         return ResponseEntity.ok(new PaginatedResponse<>(
-                users.map(UserMapper::toDTO).getContent(),
+                users.map(userMapper::toDTO).getContent(),
                 page, size, users.getTotalElements()));
     }
 
@@ -55,8 +56,8 @@ public class UserController {
     })
     public ResponseEntity<UserDTO> getById(@PathVariable Long id) {
         User user = userService.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé avec l'id : " + id));
-        return ResponseEntity.ok(UserMapper.toDTO(user));
+                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouve avec l'id : " + id));
+        return ResponseEntity.ok(userMapper.toDTO(user));
     }
 
     @PostMapping
@@ -67,7 +68,7 @@ public class UserController {
     })
     public ResponseEntity<UserDTO> create(@Valid @RequestBody UserCreateDTO dto) {
         User created = userService.create(dto.getUsername(), dto.getEmail(), dto.getPassword());
-        UserDTO responseDTO = UserMapper.toDTO(created);
+        UserDTO responseDTO = userMapper.toDTO(created);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}").buildAndExpand(created.getId()).toUri();
         return ResponseEntity.created(location).body(responseDTO);
@@ -83,7 +84,7 @@ public class UserController {
     })
     public ResponseEntity<UserDTO> update(@PathVariable Long id, @Valid @RequestBody UserUpdateDTO dto) {
         User updated = userService.update(id, dto.getUsername(), dto.getEmail());
-        return ResponseEntity.ok(UserMapper.toDTO(updated));
+        return ResponseEntity.ok(userMapper.toDTO(updated));
     }
 
     @DeleteMapping("/{id}")
@@ -107,7 +108,7 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "Utilisateur non trouve")
     })
     public ResponseEntity<UserDTO> patch(@PathVariable Long id, @Valid @RequestBody UserPatchDTO dto) {
-        User patched = userService.patch(id, dto.getUsername(), dto.getEmail(), dto.getPassword());
-        return ResponseEntity.ok(UserMapper.toDTO(patched));
+        User patched = userService.patch(id, dto);
+        return ResponseEntity.ok(userMapper.toDTO(patched));
     }
 }
