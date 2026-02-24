@@ -11,6 +11,7 @@ services:
       - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./src/main/java/org/univ_paris8/iut/montreuil/qdev/tp2025/ponnou/tp1/tp1/docker/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d masterannonce"]
       interval: 10s

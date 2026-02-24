@@ -8,6 +8,7 @@ CREATE TABLE users (
     username    VARCHAR(50)  NOT NULL UNIQUE,
     email       VARCHAR(255) NOT NULL UNIQUE,
     password    VARCHAR(255) NOT NULL,
+    role        VARCHAR(20)  NOT NULL DEFAULT 'ROLE_USER',
     created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -41,11 +42,11 @@ CREATE INDEX idx_annonces_date ON annonces(date DESC);
 
 -- Données de test
 
--- Utilisateurs (mot de passe en clair pour les tests - à hasher en production)
-INSERT INTO users (username, email, password) VALUES
-    ('admin', 'admin@masterannonce.fr', 'admin123'),
-    ('jean', 'jean.dupont@mail.com', 'jean123'),
-    ('marie', 'marie.martin@mail.com', 'marie123');
+-- Utilisateurs (mot de passe : "password" pour tous, hashé en SHA-256)
+INSERT INTO users (username, email, password, role) VALUES
+    ('admin', 'admin@masterannonce.fr', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8', 'ROLE_ADMIN'),
+    ('jean', 'jean.dupont@mail.com', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8', 'ROLE_USER'),
+    ('marie', 'marie.martin@mail.com', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8', 'ROLE_USER');
 
 -- Catégories
 INSERT INTO categories (label) VALUES

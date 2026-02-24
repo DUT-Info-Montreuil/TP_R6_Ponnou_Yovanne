@@ -23,19 +23,19 @@ public interface AnnonceRepository extends JpaRepository<Annonce, Long>, JpaSpec
     @EntityGraph(attributePaths = {"author", "category"})
     Page<Annonce> findAll(org.springframework.data.jpa.domain.Specification<Annonce> spec, Pageable pageable);
 
-    @Query("SELECT a FROM Annonce a LEFT JOIN FETCH a.author LEFT JOIN FETCH a.category WHERE a.status = :status")
-    Page<Annonce> findByStatusWithRelations(@Param("status") AnnonceStatus status, Pageable pageable);
+    @EntityGraph(attributePaths = {"author", "category"})
+    Page<Annonce> findByStatus(@Param("status") AnnonceStatus status, Pageable pageable);
 
-    @Query("SELECT a FROM Annonce a LEFT JOIN FETCH a.author LEFT JOIN FETCH a.category WHERE a.author.id = :authorId")
-    Page<Annonce> findByAuthorIdWithRelations(@Param("authorId") Long authorId, Pageable pageable);
+    @EntityGraph(attributePaths = {"author", "category"})
+    Page<Annonce> findByAuthorId(@Param("authorId") Long authorId, Pageable pageable);
 
-    @Query("SELECT a FROM Annonce a LEFT JOIN FETCH a.author LEFT JOIN FETCH a.category " +
-            "WHERE a.status = :status AND (LOWER(a.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+    @EntityGraph(attributePaths = {"author", "category"})
+    @Query("SELECT a FROM Annonce a WHERE a.status = :status AND " +
+            "(LOWER(a.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "OR LOWER(a.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<Annonce> searchByKeyword(@Param("keyword") String keyword, @Param("status") AnnonceStatus status, Pageable pageable);
 
-    @Query("SELECT a FROM Annonce a LEFT JOIN FETCH a.author LEFT JOIN FETCH a.category " +
-            "WHERE a.category.id = :categoryId AND a.status = :status")
+    @EntityGraph(attributePaths = {"author", "category"})
     Page<Annonce> findByCategoryIdAndStatus(@Param("categoryId") Long categoryId, @Param("status") AnnonceStatus status, Pageable pageable);
 
     long countByStatus(AnnonceStatus status);

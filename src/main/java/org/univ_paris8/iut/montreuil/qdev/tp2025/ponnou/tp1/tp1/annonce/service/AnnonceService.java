@@ -140,12 +140,12 @@ public class AnnonceService {
 
     @Transactional(readOnly = true)
     public Page<Annonce> findPublishedPaginated(Pageable pageable) {
-        return annonceRepository.findByStatusWithRelations(AnnonceStatus.PUBLISHED, pageable);
+        return annonceRepository.findByStatus(AnnonceStatus.PUBLISHED, pageable);
     }
 
     @Transactional(readOnly = true)
     public Page<Annonce> findByAuthorPaginated(Long authorId, Pageable pageable) {
-        return annonceRepository.findByAuthorIdWithRelations(authorId, pageable);
+        return annonceRepository.findByAuthorId(authorId, pageable);
     }
 
     @Transactional(readOnly = true)
