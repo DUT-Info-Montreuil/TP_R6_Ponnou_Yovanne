@@ -1,6 +1,7 @@
 services:
   db:
-    image: postgres:16-alpine
+    build: .
+    image: masterannonce-postgres:16-alpine
     container_name: masterannonce-db
     restart: unless-stopped
     environment:
@@ -11,7 +12,6 @@ services:
       - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d masterannonce"]
       interval: 10s
