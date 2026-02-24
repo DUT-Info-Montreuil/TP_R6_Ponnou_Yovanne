@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -34,16 +34,16 @@ class RefreshLogoutAuthControllerRestTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private UserService userService;
 
-    @MockBean
+    @MockitoBean
     private JwtService jwtService;
 
-    @MockBean
+    @MockitoBean
     private RefreshTokenService refreshTokenService;
 
-    @MockBean
+    @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     // --- /refresh ---
@@ -63,10 +63,10 @@ class RefreshLogoutAuthControllerRestTest {
         when(refreshTokenService.createRefreshToken(user)).thenReturn(newToken);
 
         mockMvc.perform(post("/api/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"refreshToken": "old-token"}
-                                """))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"refreshToken": "old-token"}
+                        """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").value("new-jwt"))
                 .andExpect(jsonPath("$.username").value("alice"))
@@ -79,10 +79,10 @@ class RefreshLogoutAuthControllerRestTest {
         when(refreshTokenService.findByToken("unknown-token")).thenReturn(Optional.empty());
 
         mockMvc.perform(post("/api/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"refreshToken": "unknown-token"}
-                                """))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"refreshToken": "unknown-token"}
+                        """))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error").value("UNAUTHORIZED"));
     }
@@ -98,10 +98,10 @@ class RefreshLogoutAuthControllerRestTest {
         when(refreshTokenService.findByToken("rev-token")).thenReturn(Optional.of(revoked));
 
         mockMvc.perform(post("/api/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"refreshToken": "rev-token"}
-                                """))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"refreshToken": "rev-token"}
+                        """))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error").value("UNAUTHORIZED"));
     }
@@ -116,10 +116,10 @@ class RefreshLogoutAuthControllerRestTest {
         when(refreshTokenService.findByToken("exp-token")).thenReturn(Optional.of(expired));
 
         mockMvc.perform(post("/api/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"refreshToken": "exp-token"}
-                                """))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"refreshToken": "exp-token"}
+                        """))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error").value("UNAUTHORIZED"));
     }
@@ -128,8 +128,8 @@ class RefreshLogoutAuthControllerRestTest {
     @DisplayName("refresh_shouldReturn400_whenBodyMissing")
     void refresh_shouldReturn400_whenBodyMissing() throws Exception {
         mockMvc.perform(post("/api/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"));
     }
@@ -147,10 +147,10 @@ class RefreshLogoutAuthControllerRestTest {
         doNothing().when(refreshTokenService).revokeAllByUser(1L);
 
         mockMvc.perform(post("/api/auth/logout")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"refreshToken": "valid-token"}
-                                """))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"refreshToken": "valid-token"}
+                        """))
                 .andExpect(status().isNoContent());
 
         verify(refreshTokenService).revokeAllByUser(1L);
@@ -162,10 +162,10 @@ class RefreshLogoutAuthControllerRestTest {
         when(refreshTokenService.findByToken("bad-token")).thenReturn(Optional.empty());
 
         mockMvc.perform(post("/api/auth/logout")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"refreshToken": "bad-token"}
-                                """))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"refreshToken": "bad-token"}
+                        """))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error").value("UNAUTHORIZED"));
     }
@@ -174,8 +174,8 @@ class RefreshLogoutAuthControllerRestTest {
     @DisplayName("logout_shouldReturn400_whenBodyMissing")
     void logout_shouldReturn400_whenBodyMissing() throws Exception {
         mockMvc.perform(post("/api/auth/logout")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"));
     }

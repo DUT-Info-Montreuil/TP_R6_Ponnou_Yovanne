@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.security.JwtAuthenticationFilter;
@@ -24,15 +24,15 @@ abstract class AuthControllerRestTestBase {
     @Autowired
     protected ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     protected UserService userService;
 
-    @MockBean
+    @MockitoBean
     protected JwtService jwtService;
 
-    @MockBean
+    @MockitoBean
     protected RefreshTokenService refreshTokenService;
 
-    @MockBean
+    @MockitoBean
     protected JwtAuthenticationFilter jwtAuthenticationFilter;
 }

@@ -186,12 +186,16 @@
                         <testInclude>**/category/service/CreateUpdateCategoryServiceTest.java</testInclude>
                         <testInclude>**/category/service/FindDeleteCategoryServiceTest.java</testInclude>
                         <testInclude>**/category/controller/CategorySecurityControllerRestTest.java</testInclude>
+                        <testInclude>**/category/controller/CategoryControllerRestTest.java</testInclude>
+                        <testInclude>**/category/dto/CategoryDTOTest.java</testInclude>
                         <testInclude>**/category/mapper/CategoryMapperTest.java</testInclude>
                         <testInclude>**/user/repository/UserRepositoryTestBase.java</testInclude>
                         <testInclude>**/user/repository/CrudUserRepositoryTest.java</testInclude>
                         <testInclude>**/user/service/UserServiceTestBase.java</testInclude>
                         <testInclude>**/user/service/CreateUpdateUserServiceTest.java</testInclude>
                         <testInclude>**/user/service/AuthFindDeleteUserServiceTest.java</testInclude>
+                        <testInclude>**/user/controller/UserControllerRestTest.java</testInclude>
+                        <testInclude>**/user/dto/UserDTOTest.java</testInclude>
                         <testInclude>**/user/mapper/UserMapperTest.java</testInclude>
                         <testInclude>**/auth/controller/AuthControllerRestTestBase.java</testInclude>
                         <testInclude>**/auth/controller/LoginAuthControllerRestTest.java</testInclude>

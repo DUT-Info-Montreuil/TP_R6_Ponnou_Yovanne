@@ -5,7 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
@@ -27,7 +27,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = CategoryController.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class, CorrelationIdFilter.class, GlobalExceptionHandler.class})
+@Import({ SecurityConfig.class, JwtAuthenticationFilter.class, CorrelationIdFilter.class,
+        GlobalExceptionHandler.class })
 class CategorySecurityControllerRestTest {
 
     @Autowired
@@ -36,13 +37,13 @@ class CategorySecurityControllerRestTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private CategoryService categoryService;
 
-    @MockBean
+    @MockitoBean
     private CategoryMapper categoryMapper;
 
-    @MockBean
+    @MockitoBean
     private JwtService jwtService;
 
     @Test
@@ -59,8 +60,8 @@ class CategorySecurityControllerRestTest {
         when(categoryMapper.toDTO(created)).thenReturn(dto);
 
         mockMvc.perform(post("/api/categories")
-                        .contentType(APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(java.util.Map.of("label", "Immobilier"))))
+                .contentType(APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(java.util.Map.of("label", "Immobilier"))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.label").value("Immobilier"));
@@ -71,8 +72,8 @@ class CategorySecurityControllerRestTest {
     @WithMockUser(roles = "USER")
     void create_asUser_shouldReturn403() throws Exception {
         mockMvc.perform(post("/api/categories")
-                        .contentType(APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(java.util.Map.of("label", "Immobilier"))))
+                .contentType(APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(java.util.Map.of("label", "Immobilier"))))
                 .andExpect(status().isForbidden());
     }
 
@@ -80,8 +81,8 @@ class CategorySecurityControllerRestTest {
     @DisplayName("create_withoutAuth_shouldReturn403")
     void create_withoutAuth_shouldReturn403() throws Exception {
         mockMvc.perform(post("/api/categories")
-                        .contentType(APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(java.util.Map.of("label", "Immobilier"))))
+                .contentType(APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(java.util.Map.of("label", "Immobilier"))))
                 .andExpect(status().isForbidden());
     }
 }
