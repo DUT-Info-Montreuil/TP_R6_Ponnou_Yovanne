@@ -262,6 +262,27 @@ Comportement:
   - build de l'image `masterannonce:latest`
   - export en artifact `masterannonce-docker-image`
 
-Choix base de tests en CI:
-- H2 in-memory (profil `test`) est utilisée pour garder une pipeline simple et stable.
-- Les tests existants sont déjà câblés en Spring Boot avec `application-test.yml`.
+### Choix base de données en CI — Testcontainers (Option 1)
+
+**Testcontainers** est utilisé pour les tests. Au lieu d'une base H2 in-memory, chaque exécution de test démarre un vrai conteneur PostgreSQL via le driver JDBC `jdbc:tc:postgresql:15:///`.
+
+Avantages :
+- Reproductible : même base que la production (PostgreSQL)
+- Fiable : aucun écart de comportement SQL entre H2 et PostgreSQL
+- Aucun service PostgreSQL à déclarer dans le workflow CI — Docker est disponible nativement sur `ubuntu-latest`
+
+Configuration dans [src/test/resources/application-test.yml](src/test/resources/application-test.yml) :
+```yaml
+spring:
+  datasource:
+    url: jdbc:tc:postgresql:15:///masterannonce
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+```
+
+### Artifacts produits
+
+| Nom | Contenu |
+|---|---|
+| `master-annonce-jar` | `target/masterannonce.jar` |
+| `jacoco-report` | rapport de couverture JaCoCo (`target/site/jacoco/`) |
+| `masterannonce-docker-image` | image Docker exportée (uniquement sur `main`) |
