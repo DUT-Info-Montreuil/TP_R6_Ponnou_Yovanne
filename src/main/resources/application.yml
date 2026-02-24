@@ -28,6 +28,13 @@ server:
 jwt:
   secret: MasterAnnonceSecretKeyForJWTTokenGeneration2025PonnouYovanne
   expiration: 86400000
+  refresh-expiration: 604800000
+
+# Rate limiting (login)
+rate-limit:
+  login:
+    capacity: 5
+    refill-seconds: 60
 
 # Actuator
 management:

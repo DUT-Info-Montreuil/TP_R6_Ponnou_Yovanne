@@ -195,7 +195,10 @@
                         <testInclude>**/user/mapper/UserMapperTest.java</testInclude>
                         <testInclude>**/auth/controller/AuthControllerRestTestBase.java</testInclude>
                         <testInclude>**/auth/controller/LoginAuthControllerRestTest.java</testInclude>
+                        <testInclude>**/auth/controller/RefreshLogoutAuthControllerRestTest.java</testInclude>
                         <testInclude>**/auth/integration/AuthFlowIntegrationTest.java</testInclude>
+                        <testInclude>**/auth/integration/RefreshTokenIntegrationTest.java</testInclude>
+                        <testInclude>**/common/ratelimit/LoginRateLimitFilterTest.java</testInclude>
                     </testIncludes>
                 </configuration>
             </plugin>
@@ -215,6 +218,33 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                    </execution>
+                    <execution>
+                        <id>check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>INSTRUCTION</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.80</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                            <excludes>
+                                <exclude>**/MasterAnnonceApplication.class</exclude>
+                                <exclude>**/common/config/OpenApiConfig.class</exclude>
+                                <exclude>**/dto/**</exclude>
+                                <exclude>**/model/**</exclude>
+                            </excludes>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

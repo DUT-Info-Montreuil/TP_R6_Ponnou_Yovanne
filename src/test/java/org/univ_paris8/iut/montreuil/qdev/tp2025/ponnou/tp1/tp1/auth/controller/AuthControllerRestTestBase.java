@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.security.JwtAuthenticationFilter;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.security.JwtService;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.service.RefreshTokenService;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.GlobalExceptionHandler;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.service.UserService;
 
@@ -28,6 +29,9 @@ abstract class AuthControllerRestTestBase {
 
     @MockBean
     protected JwtService jwtService;
+
+    @MockBean
+    protected RefreshTokenService refreshTokenService;
 
     @MockBean
     protected JwtAuthenticationFilter jwtAuthenticationFilter;

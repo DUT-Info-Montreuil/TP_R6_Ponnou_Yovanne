@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.Annonce;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.model.AnnonceStatus;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.repository.AnnonceRepository;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.repository.RefreshTokenRepository;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.Category;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.repository.CategoryRepository;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.config.PasswordUtils;
@@ -47,6 +48,9 @@ class AnnonceWorkflowIntegrationTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
+
     private User user1;
     private User user2;
     private User admin;
@@ -56,6 +60,7 @@ class AnnonceWorkflowIntegrationTest {
     void setUp() {
         annonceRepository.deleteAll();
         categoryRepository.deleteAll();
+        refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
 
         user1 = userRepository.save(new User("user1", "user1@test.com", PasswordUtils.hash("password123")));

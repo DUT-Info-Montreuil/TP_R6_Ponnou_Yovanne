@@ -10,6 +10,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.logging.CorrelationIdFilter;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.ratelimit.LoginRateLimitFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -18,11 +19,14 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CorrelationIdFilter correlationIdFilter;
+    private final LoginRateLimitFilter loginRateLimitFilter;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
-                          CorrelationIdFilter correlationIdFilter) {
+                          CorrelationIdFilter correlationIdFilter,
+                          LoginRateLimitFilter loginRateLimitFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.correlationIdFilter = correlationIdFilter;
+        this.loginRateLimitFilter = loginRateLimitFilter;
     }
 
     @Bean
@@ -31,12 +35,14 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login", "/actuator/**", "/swagger-ui/**", "/swagger-ui.html", "/api-docs/**").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/refresh", "/api/auth/logout",
+                                "/actuator/**", "/swagger-ui/**", "/swagger-ui.html", "/api-docs/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/annonces/**", "/api/categories/**", "/api/users/**", "/api/meta/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(correlationIdFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(jwtAuthenticationFilter, CorrelationIdFilter.class);
+                .addFilterAfter(loginRateLimitFilter, CorrelationIdFilter.class)
+                .addFilterAfter(jwtAuthenticationFilter, LoginRateLimitFilter.class);
         return http.build();
     }
 }
