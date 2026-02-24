@@ -2,8 +2,10 @@ package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.controller
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.model.RefreshToken;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
 
+import java.time.Instant;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.eq;
@@ -21,9 +23,11 @@ class LoginAuthControllerRestTest extends AuthControllerRestTestBase {
         User user = new User("testuser", "test@test.com", "hashed-password");
         user.setId(1L);
         user.setRole("ROLE_ADMIN");
+        RefreshToken refreshToken = new RefreshToken("refresh-token", user, Instant.now().plusSeconds(3600));
 
         when(userService.authenticate(eq("testuser"), eq("password123"))).thenReturn(Optional.of(user));
         when(jwtService.generateToken(1L, "testuser", "ROLE_ADMIN")).thenReturn("jwt-token");
+        when(refreshTokenService.createRefreshToken(user)).thenReturn(refreshToken);
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(APPLICATION_JSON)
