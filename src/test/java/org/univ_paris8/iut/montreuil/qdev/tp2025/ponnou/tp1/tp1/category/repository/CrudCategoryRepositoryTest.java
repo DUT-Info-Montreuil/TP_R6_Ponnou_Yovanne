@@ -4,6 +4,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.category.model.Category;
 
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -12,12 +14,13 @@ class CrudCategoryRepositoryTest extends CategoryRepositoryTestBase {
     @Test
     @DisplayName("save_shouldPersistCategory")
     void save_shouldPersistCategory() {
-        Category category = new Category("Vehicules");
+        String label = "Vehicules-" + UUID.randomUUID();
+        Category category = new Category(label);
 
         Category saved = categoryRepository.save(category);
 
         assertTrue(saved.getId() != null);
-        assertEquals("Vehicules", saved.getLabel());
+        assertEquals(label, saved.getLabel());
     }
 
     @Test
