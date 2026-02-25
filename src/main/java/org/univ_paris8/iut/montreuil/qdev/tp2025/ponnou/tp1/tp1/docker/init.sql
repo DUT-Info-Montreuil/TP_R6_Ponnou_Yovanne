@@ -56,9 +56,9 @@ CREATE INDEX idx_annonces_date ON annonces(date DESC);
 
 -- Utilisateurs (mot de passe : "password" pour tous, hashé en BCrypt)
 INSERT INTO users (username, email, password, role) VALUES
-    ('admin', 'admin@masterannonce.fr', '$2a$10$slYQmyNdgTY1hcT.f5rOCOEpOzLqoW9YuH0vU85z7SHkAK8G5kW/C', 'ROLE_ADMIN'),
-    ('jean', 'jean.dupont@mail.com', '$2a$10$slYQmyNdgTY1hcT.f5rOCOEpOzLqoW9YuH0vU85z7SHkAK8G5kW/C', 'ROLE_USER'),
-    ('marie', 'marie.martin@mail.com', '$2a$10$slYQmyNdgTY1hcT.f5rOCOEpOzLqoW9YuH0vU85z7SHkAK8G5kW/C', 'ROLE_USER');
+    ('admin', 'admin@masterannonce.fr', '$2a$10$bkKoMEjCOUewmN26ixBzzejA.UU.gppR/sbnRMJu3gL8UoIuYXMSe', 'ROLE_ADMIN'),
+    ('jean', 'jean.dupont@mail.com', '$2a$10$bkKoMEjCOUewmN26ixBzzejA.UU.gppR/sbnRMJu3gL8UoIuYXMSe', 'ROLE_USER'),
+    ('marie', 'marie.martin@mail.com', '$2a$10$bkKoMEjCOUewmN26ixBzzejA.UU.gppR/sbnRMJu3gL8UoIuYXMSe', 'ROLE_USER');
 
 -- Catégories
 INSERT INTO categories (label) VALUES
