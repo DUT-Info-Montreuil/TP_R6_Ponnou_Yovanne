@@ -21,7 +21,7 @@ class ArchiveAnnonceControllerRestTest extends AnnonceControllerRestTestBase {
         AnnonceDTO dto = new AnnonceDTO();
         dto.setId(1L);
 
-        when(annonceService.archive(1L, 1L)).thenReturn(annonce);
+        when(annonceService.archive(1L)).thenReturn(annonce);
         when(annonceMapper.toDTO(annonce)).thenReturn(dto);
 
         mockMvc.perform(put("/api/annonces/{id}/archive", 1).principal(authenticatedPrincipal(1L, "admin", "ROLE_ADMIN")))

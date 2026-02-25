@@ -64,7 +64,7 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
         }
     }
 
-    public void clearBuckets() {
+    void clearBuckets() {
         buckets.clear();
     }
 

@@ -1,4 +1,5 @@
 DROP TABLE IF EXISTS annonces;
+DROP TABLE IF EXISTS refresh_tokens;
 DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS users;
 
@@ -27,11 +28,22 @@ CREATE TABLE annonces (
     mail        VARCHAR(64)  NOT NULL,
     date        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     status      VARCHAR(20)  NOT NULL DEFAULT 'DRAFT',
+    version     BIGINT       NOT NULL DEFAULT 0,
     author_id   BIGINT       NOT NULL,
     category_id BIGINT       NOT NULL,
     CONSTRAINT fk_annonces_author FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_annonces_category FOREIGN KEY (category_id) REFERENCES categories(id),
     CONSTRAINT chk_status CHECK (status IN ('DRAFT', 'PUBLISHED', 'ARCHIVED'))
+);
+
+-- Table des tokens de rafraîchissement
+CREATE TABLE refresh_tokens (
+    id         BIGSERIAL PRIMARY KEY,
+    token      VARCHAR(512) NOT NULL UNIQUE,
+    user_id    BIGINT       NOT NULL,
+    expires_at TIMESTAMP    NOT NULL,
+    revoked    BOOLEAN      NOT NULL DEFAULT false,
+    CONSTRAINT fk_refresh_token_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Index pour améliorer les performances
@@ -42,11 +54,11 @@ CREATE INDEX idx_annonces_date ON annonces(date DESC);
 
 -- Données de test
 
--- Utilisateurs (mot de passe : "password" pour tous, hashé en SHA-256)
+-- Utilisateurs (mot de passe : "password" pour tous, hashé en BCrypt)
 INSERT INTO users (username, email, password, role) VALUES
-    ('admin', 'admin@masterannonce.fr', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8', 'ROLE_ADMIN'),
-    ('jean', 'jean.dupont@mail.com', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8', 'ROLE_USER'),
-    ('marie', 'marie.martin@mail.com', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8', 'ROLE_USER');
+    ('admin', 'admin@masterannonce.fr', '$2a$10$slYQmyNdgTY1hcT.f5rOCOEpOzLqoW9YuH0vU85z7SHkAK8G5kW/C', 'ROLE_ADMIN'),
+    ('jean', 'jean.dupont@mail.com', '$2a$10$slYQmyNdgTY1hcT.f5rOCOEpOzLqoW9YuH0vU85z7SHkAK8G5kW/C', 'ROLE_USER'),
+    ('marie', 'marie.martin@mail.com', '$2a$10$slYQmyNdgTY1hcT.f5rOCOEpOzLqoW9YuH0vU85z7SHkAK8G5kW/C', 'ROLE_USER');
 
 -- Catégories
 INSERT INTO categories (label) VALUES

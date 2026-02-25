@@ -14,10 +14,13 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.security.AuthenticatedUser;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.dto.PaginatedResponse;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ErrorResponse;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ForbiddenOperationException;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ResourceNotFoundException;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.dto.UserCreateDTO;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.dto.UserDTO;
@@ -89,10 +92,14 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "Utilisateur mis a jour"),
             @ApiResponse(responseCode = "400", description = "Requete invalide",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Operation interdite",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "404", description = "Utilisateur non trouve",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<UserDTO> update(@PathVariable Long id, @Valid @RequestBody UserUpdateDTO dto) {
+    public ResponseEntity<UserDTO> update(@PathVariable Long id, @Valid @RequestBody UserUpdateDTO dto,
+                                          Authentication authentication) {
+        checkUserAccess(id, authentication);
         User updated = userService.update(id, dto.getUsername(), dto.getEmail());
         return ResponseEntity.ok(userMapper.toDTO(updated));
     }
@@ -120,11 +127,28 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "Utilisateur mis a jour"),
             @ApiResponse(responseCode = "400", description = "Requete invalide",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Operation interdite",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "404", description = "Utilisateur non trouve",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<UserDTO> patch(@PathVariable Long id, @Valid @RequestBody UserPatchDTO dto) {
+    public ResponseEntity<UserDTO> patch(@PathVariable Long id, @Valid @RequestBody UserPatchDTO dto,
+                                         Authentication authentication) {
+        checkUserAccess(id, authentication);
         User patched = userService.patch(id, dto);
         return ResponseEntity.ok(userMapper.toDTO(patched));
+    }
+
+    private void checkUserAccess(Long targetId, Authentication authentication) {
+        Object principal = authentication != null ? authentication.getPrincipal() : null;
+        if (principal instanceof AuthenticatedUser user) {
+            boolean isAdmin = user.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+            if (!isAdmin && !user.getUserId().equals(targetId)) {
+                throw new ForbiddenOperationException("Acces interdit : vous ne pouvez modifier que votre propre compte");
+            }
+        } else {
+            throw new ForbiddenOperationException("Non authentifie");
+        }
     }
 }

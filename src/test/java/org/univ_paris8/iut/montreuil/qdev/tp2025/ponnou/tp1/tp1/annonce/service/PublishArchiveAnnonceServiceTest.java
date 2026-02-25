@@ -54,18 +54,22 @@ class PublishArchiveAnnonceServiceTest extends AnnonceServiceTestBase {
         when(annonceRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(annonce));
         when(annonceRepository.save(any(Annonce.class))).thenAnswer(i -> i.getArgument(0));
 
-        Annonce result = annonceService.archive(1L, 1L);
+        Annonce result = annonceService.archive(1L);
 
         assertEquals(AnnonceStatus.ARCHIVED, result.getStatus());
     }
 
     @Test
-    @DisplayName("archive_shouldThrow_whenNotOwner")
-    void archive_shouldThrow_whenNotOwner() {
-        Annonce annonce = annonce(1L, 2L, AnnonceStatus.DRAFT);
+    @DisplayName("archive_shouldSetStatusArchived_forAnyAuthor")
+    void archive_shouldSetStatusArchived_forAnyAuthor() {
+        // Un admin peut archiver une annonce dont il n'est pas l'auteur
+        Annonce annonce = annonce(1L, 99L, AnnonceStatus.PUBLISHED);
         when(annonceRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(annonce));
+        when(annonceRepository.save(any(Annonce.class))).thenAnswer(i -> i.getArgument(0));
 
-        assertThrows(ForbiddenOperationException.class, () -> annonceService.archive(1L, 1L));
+        Annonce result = annonceService.archive(1L);
+
+        assertEquals(AnnonceStatus.ARCHIVED, result.getStatus());
     }
 
     private Annonce annonce(Long annonceId, Long authorId, AnnonceStatus status) {

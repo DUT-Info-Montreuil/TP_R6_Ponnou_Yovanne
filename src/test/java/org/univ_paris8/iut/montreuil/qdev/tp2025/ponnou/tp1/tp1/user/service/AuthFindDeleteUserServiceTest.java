@@ -4,7 +4,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.config.PasswordUtils;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ResourceNotFoundException;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
 
@@ -22,7 +21,7 @@ class AuthFindDeleteUserServiceTest extends UserServiceTestBase {
     @Test
     @DisplayName("authenticate_shouldReturnUser_whenValid")
     void authenticate_shouldReturnUser_whenValid() {
-        User user = new User("john", "john@test.com", PasswordUtils.hash("secret"));
+        User user = new User("john", "john@test.com", passwordEncoder.encode("secret"));
         when(userRepository.findByUsername("john")).thenReturn(Optional.of(user));
 
         Optional<User> result = userService.authenticate("john", "secret");
@@ -33,7 +32,7 @@ class AuthFindDeleteUserServiceTest extends UserServiceTestBase {
     @Test
     @DisplayName("authenticate_shouldReturnEmpty_whenWrongPassword")
     void authenticate_shouldReturnEmpty_whenWrongPassword() {
-        User user = new User("john", "john@test.com", PasswordUtils.hash("secret"));
+        User user = new User("john", "john@test.com", passwordEncoder.encode("secret"));
         when(userRepository.findByUsername("john")).thenReturn(Optional.of(user));
 
         Optional<User> result = userService.authenticate("john", "wrong");

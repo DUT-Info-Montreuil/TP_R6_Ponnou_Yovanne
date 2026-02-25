@@ -29,6 +29,7 @@ import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.annonce.utils.An
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.security.AuthenticatedUser;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.dto.PaginatedResponse;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ErrorResponse;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ForbiddenOperationException;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ResourceNotFoundException;
 
 import java.net.URI;
@@ -228,10 +229,8 @@ public class AnnonceController {
             @ApiResponse(responseCode = "409", description = "Conflit metier",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<AnnonceDTO> archive(@PathVariable Long id,
-                                              Authentication authentication) {
-        Long userId = getAuthenticatedUserId(authentication);
-        Annonce archived = annonceService.archive(id, userId);
+    public ResponseEntity<AnnonceDTO> archive(@PathVariable Long id) {
+        Annonce archived = annonceService.archive(id);
         return ResponseEntity.ok(annonceMapper.toDTO(archived));
     }
 
@@ -240,7 +239,7 @@ public class AnnonceController {
         if (principal instanceof AuthenticatedUser user) {
             return user.getUserId();
         }
-        throw new ResourceNotFoundException("Utilisateur authentifie introuvable");
+        throw new ForbiddenOperationException("Utilisateur non authentifie");
     }
 
     private Sort parseSort(String sort) {

@@ -10,8 +10,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.repository.RefreshTokenRepository;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.config.PasswordUtils;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.repository.UserRepository;
 
@@ -45,7 +45,7 @@ class LoginRateLimitFilterTest {
         loginRateLimitFilter.clearBuckets();
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
-        User user = new User("ratelimituser", "rl@test.com", PasswordUtils.hash("pass"));
+        User user = new User("ratelimituser", "rl@test.com", new BCryptPasswordEncoder().encode("pass"));
         userRepository.save(user);
     }
 

@@ -9,8 +9,12 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.web.servlet.MockMvc;
+import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.security.AuthenticatedUser;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.security.JwtAuthenticationFilter;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.security.JwtService;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.security.SecurityConfig;
@@ -203,7 +207,6 @@ class UserControllerRestTest {
 
     @Test
     @DisplayName("update_shouldReturn200_whenAuthenticated")
-    @WithMockUser
     void update_shouldReturn200_whenAuthenticated() throws Exception {
         User updated = new User("alice_new", "alice_new@test.com", "pwd");
         updated.setId(1L);
@@ -214,7 +217,9 @@ class UserControllerRestTest {
         when(userService.update(eq(1L), eq("alice_new"), eq("alice_new@test.com"))).thenReturn(updated);
         when(userMapper.toDTO(updated)).thenReturn(dto);
 
+        Authentication auth = ownerAuth(1L);
         mockMvc.perform(put("/api/users/1")
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(auth))
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "username", "alice_new",
@@ -224,13 +229,27 @@ class UserControllerRestTest {
     }
 
     @Test
+    @DisplayName("update_asOtherUser_shouldReturn403")
+    void update_asOtherUser_shouldReturn403() throws Exception {
+        Authentication auth = ownerAuth(2L); // userId=2 tente de modifier user 1
+        mockMvc.perform(put("/api/users/1")
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(auth))
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "username", "hacker",
+                                "email", "hacker@test.com"))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     @DisplayName("update_whenNotFound_shouldReturn404")
-    @WithMockUser
     void update_whenNotFound_shouldReturn404() throws Exception {
         when(userService.update(eq(99L), any(), any()))
                 .thenThrow(new ResourceNotFoundException("Utilisateur non trouve"));
 
+        Authentication auth = ownerAuth(99L);
         mockMvc.perform(put("/api/users/99")
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(auth))
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "username", "someone",
@@ -240,9 +259,10 @@ class UserControllerRestTest {
 
     @Test
     @DisplayName("update_withBlankUsername_shouldReturn400")
-    @WithMockUser
     void update_withBlankUsername_shouldReturn400() throws Exception {
+        Authentication auth = ownerAuth(1L);
         mockMvc.perform(put("/api/users/1")
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(auth))
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "username", "",
@@ -285,7 +305,6 @@ class UserControllerRestTest {
 
     @Test
     @DisplayName("patch_shouldReturn200_whenAuthenticated")
-    @WithMockUser
     void patch_shouldReturn200_whenAuthenticated() throws Exception {
         User patched = new User("alice_patched", "alice@test.com", "pwd");
         patched.setId(1L);
@@ -296,11 +315,24 @@ class UserControllerRestTest {
         when(userService.patch(eq(1L), any())).thenReturn(patched);
         when(userMapper.toDTO(patched)).thenReturn(dto);
 
+        Authentication auth = ownerAuth(1L);
         mockMvc.perform(patch("/api/users/1")
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(auth))
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("username", "alice_patched"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("alice_patched"));
+    }
+
+    @Test
+    @DisplayName("patch_asOtherUser_shouldReturn403")
+    void patch_asOtherUser_shouldReturn403() throws Exception {
+        Authentication auth = ownerAuth(2L); // userId=2 tente de patcher user 1
+        mockMvc.perform(patch("/api/users/1")
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(auth))
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("username", "hacker"))))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -314,12 +346,13 @@ class UserControllerRestTest {
 
     @Test
     @DisplayName("patch_whenNotFound_shouldReturn404")
-    @WithMockUser
     void patch_whenNotFound_shouldReturn404() throws Exception {
         doThrow(new ResourceNotFoundException("Utilisateur non trouve"))
                 .when(userService).patch(eq(99L), any());
 
+        Authentication auth = ownerAuth(99L);
         mockMvc.perform(patch("/api/users/99")
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(auth))
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("username", "someone"))))
                 .andExpect(status().isNotFound());
@@ -327,11 +360,17 @@ class UserControllerRestTest {
 
     @Test
     @DisplayName("patch_withInvalidEmail_shouldReturn400")
-    @WithMockUser
     void patch_withInvalidEmail_shouldReturn400() throws Exception {
+        Authentication auth = ownerAuth(1L);
         mockMvc.perform(patch("/api/users/1")
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(auth))
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("email", "not-an-email"))))
                 .andExpect(status().isBadRequest());
+    }
+
+    private Authentication ownerAuth(Long userId) {
+        AuthenticatedUser principal = new AuthenticatedUser(userId, "user" + userId, "ROLE_USER");
+        return new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
     }
 }

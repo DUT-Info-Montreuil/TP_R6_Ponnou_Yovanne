@@ -2,7 +2,6 @@ package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.auth.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,12 +31,12 @@ public class JwtService {
         Date expiration = new Date(now.getTime() + expirationMs);
 
         return Jwts.builder()
-                .setSubject(username)
+                .subject(username)
                 .claim(CLAIM_USER_ID, userId)
                 .claim(CLAIM_ROLE, role)
-                .setIssuedAt(now)
-                .setExpiration(expiration)
-                .signWith(key, SignatureAlgorithm.HS256)
+                .issuedAt(now)
+                .expiration(expiration)
+                .signWith(key)
                 .compact();
     }
 

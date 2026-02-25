@@ -3,9 +3,9 @@ package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.config.PasswordUtils;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ResourceNotFoundException;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.dto.UserPatchDTO;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.mapper.UserMapper;
@@ -20,6 +20,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public User create(String username, String email, String password) {
@@ -31,7 +32,7 @@ public class UserService {
             throw new IllegalArgumentException("Cet email existe deja");
         }
 
-        User user = userMapper.toEntityForCreate(username, email, PasswordUtils.hash(password));
+        User user = userMapper.toEntityForCreate(username, email, passwordEncoder.encode(password));
         return userRepository.save(user);
     }
 
@@ -71,7 +72,7 @@ public class UserService {
 
         userMapper.updateUserFromPatchDTO(dto, user);
         if (dto.getPassword() != null) {
-            user.setPassword(PasswordUtils.hash(dto.getPassword()));
+            user.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
 
         return userRepository.save(user);
@@ -102,7 +103,7 @@ public class UserService {
 
     public Optional<User> authenticate(String username, String password) {
         Optional<User> user = userRepository.findByUsername(username);
-        if (user.isPresent() && PasswordUtils.matches(password, user.get().getPassword())) {
+        if (user.isPresent() && passwordEncoder.matches(password, user.get().getPassword())) {
             return user;
         }
         return Optional.empty();

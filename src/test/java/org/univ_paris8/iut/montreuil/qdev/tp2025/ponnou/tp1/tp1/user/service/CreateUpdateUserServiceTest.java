@@ -2,7 +2,6 @@ package org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.service;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.config.PasswordUtils;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.common.exception.ResourceNotFoundException;
 import org.univ_paris8.iut.montreuil.qdev.tp2025.ponnou.tp1.tp1.user.model.User;
 
@@ -32,7 +31,7 @@ class CreateUpdateUserServiceTest extends UserServiceTestBase {
         User result = userService.create("alice", "alice@test.com", "password123");
 
         assertEquals(1L, result.getId());
-        assertTrue(PasswordUtils.matches("password123", result.getPassword()));
+        assertTrue(passwordEncoder.matches("password123", result.getPassword()));
     }
 
     @Test

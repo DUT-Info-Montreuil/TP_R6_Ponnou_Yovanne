@@ -67,8 +67,9 @@ public class CategoryService {
             throw new ResourceNotFoundException("Categorie non trouvee");
         }
 
-        if (annonceRepository.countByCategoryIdAndStatus(id, AnnonceStatus.PUBLISHED) > 0) {
-            throw new IllegalStateException("Impossible de supprimer une categorie contenant des annonces");
+        if (annonceRepository.countByCategoryIdAndStatus(id, AnnonceStatus.PUBLISHED) > 0
+                || annonceRepository.countByCategoryIdAndStatus(id, AnnonceStatus.DRAFT) > 0) {
+            throw new IllegalStateException("Impossible de supprimer une categorie contenant des annonces actives");
         }
 
         categoryRepository.deleteById(id);

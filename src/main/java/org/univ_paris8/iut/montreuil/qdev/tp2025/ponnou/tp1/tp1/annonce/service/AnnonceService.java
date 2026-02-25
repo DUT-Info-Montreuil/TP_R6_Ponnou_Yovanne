@@ -85,11 +85,9 @@ public class AnnonceService {
     }
 
     @Transactional
-    public Annonce archive(Long id, Long authenticatedUserId) {
+    public Annonce archive(Long id) {
         Annonce annonce = annonceRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Annonce non trouvee"));
-
-        checkOwnership(annonce, authenticatedUserId);
 
         annonce.setStatus(AnnonceStatus.ARCHIVED);
         return annonceRepository.save(annonce);
