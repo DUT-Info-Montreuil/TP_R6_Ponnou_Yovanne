@@ -1,16 +1,20 @@
 {
   "info": {
     "name": "MasterAnnonce API",
-    "description": "Collection Postman pour l'API REST MasterAnnonce (TP Dev Avance #3).\n\nWorkflow typique :\n1. Creer un utilisateur (POST /users)\n2. Se connecter (POST /login) -> copier le token\n3. Utiliser le token dans les endpoints proteges",
+    "description": "Collection Postman pour l'API REST MasterAnnonce (TP Dev Avance).\n\nWorkflow typique :\n1. Creer un utilisateur (POST /api/users)\n2. Se connecter (POST /api/auth/login) -> token et refreshToken sauvegardés automatiquement\n3. Utiliser le token dans les endpoints proteges\n4. Rafraichir le token (POST /api/auth/refresh)\n5. Se deconnecter (POST /api/auth/logout)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:8080/masterannonce/api"
+      "value": "http://localhost:8080/api"
     },
     {
       "key": "token",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
       "value": ""
     },
     {
@@ -38,54 +42,6 @@
   },
   "item": [
     {
-      "name": "Demo (Exercice 1)",
-      "item": [
-        {
-          "name": "Hello World",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/helloWorld",
-              "host": ["{{baseUrl}}"],
-              "path": ["helloWorld"]
-            }
-          }
-        },
-        {
-          "name": "Params - QueryParams",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/params?name=Yovanne&count=3",
-              "host": ["{{baseUrl}}"],
-              "path": ["params"],
-              "query": [
-                { "key": "name", "value": "Yovanne" },
-                { "key": "count", "value": "3" }
-              ]
-            }
-          }
-        },
-        {
-          "name": "Params - PathParams",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/params/42?detail=true",
-              "host": ["{{baseUrl}}"],
-              "path": ["params", "42"],
-              "query": [
-                { "key": "detail", "value": "true" }
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
       "name": "Auth",
       "item": [
         {
@@ -98,8 +54,12 @@
                   "if (pm.response.code === 200) {",
                   "    var json = pm.response.json();",
                   "    pm.collectionVariables.set('token', json.token);",
+                  "    pm.collectionVariables.set('refreshToken', json.refreshToken);",
                   "    pm.test('Token received', function() {",
                   "        pm.expect(json.token).to.be.a('string');",
+                  "    });",
+                  "    pm.test('RefreshToken received', function() {",
+                  "        pm.expect(json.refreshToken).to.be.a('string');",
                   "    });",
                   "}"
                 ],
@@ -118,9 +78,9 @@
               "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/login",
+              "raw": "{{baseUrl}}/auth/login",
               "host": ["{{baseUrl}}"],
-              "path": ["login"]
+              "path": ["auth", "login"]
             }
           }
         },
@@ -137,9 +97,62 @@
               "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"wrongpassword\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/login",
+              "raw": "{{baseUrl}}/auth/login",
               "host": ["{{baseUrl}}"],
-              "path": ["login"]
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
             }
           }
         }
@@ -248,7 +261,7 @@
           }
         },
         {
-          "name": "Delete User",
+          "name": "Delete User (ADMIN only)",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -265,7 +278,7 @@
       "name": "Categories",
       "item": [
         {
-          "name": "Create Category",
+          "name": "Create Category (ADMIN only)",
           "event": [
             {
               "listen": "test",
@@ -327,7 +340,7 @@
           }
         },
         {
-          "name": "Update Category",
+          "name": "Update Category (ADMIN only)",
           "request": {
             "method": "PUT",
             "header": [
@@ -345,7 +358,7 @@
           }
         },
         {
-          "name": "Patch Category",
+          "name": "Patch Category (ADMIN only)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -363,7 +376,7 @@
           }
         },
         {
-          "name": "Delete Category",
+          "name": "Delete Category (ADMIN only)",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -424,6 +437,30 @@
               "query": [
                 { "key": "page", "value": "0" },
                 { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get All Annonces - Filtered",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/annonces?page=0&size=10&sort=date,desc&keyword=appartement&categoryId={{categoryId}}&status=PUBLISHED",
+              "host": ["{{baseUrl}}"],
+              "path": ["annonces"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" },
+                { "key": "sort", "value": "date,desc" },
+                { "key": "keyword", "value": "appartement" },
+                { "key": "categoryId", "value": "{{categoryId}}" },
+                { "key": "status", "value": "PUBLISHED" },
+                { "key": "authorId", "value": "", "disabled": true },
+                { "key": "fromDate", "value": "2025-01-01", "disabled": true },
+                { "key": "toDate", "value": "2025-12-31", "disabled": true }
               ]
             }
           }
@@ -490,7 +527,7 @@
           }
         },
         {
-          "name": "Archive Annonce",
+          "name": "Archive Annonce (ADMIN only)",
           "request": {
             "method": "PUT",
             "header": [],
@@ -510,6 +547,24 @@
               "raw": "{{baseUrl}}/annonces/{{annonceId}}",
               "host": ["{{baseUrl}}"],
               "path": ["annonces", "{{annonceId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Meta",
+      "item": [
+        {
+          "name": "Get Annonces Meta (sortable/filterable fields)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/meta/annonces",
+              "host": ["{{baseUrl}}"],
+              "path": ["meta", "annonces"]
             }
           }
         }
@@ -589,6 +644,37 @@
               "raw": "{{baseUrl}}/annonces/99999",
               "host": ["{{baseUrl}}"],
               "path": ["annonces", "99999"]
+            }
+          }
+        },
+        {
+          "name": "Admin only - No ADMIN role (403)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/annonces/{{annonceId}}/archive",
+              "host": ["{{baseUrl}}"],
+              "path": ["annonces", "{{annonceId}}", "archive"]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token - Invalid (401)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"invalid-refresh-token\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
             }
           }
         }
