@@ -1,9 +1,16 @@
 package com.tp_ia;
 
-public class App 
+import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+public class App
 {
-    public static void main( String[] args )
+    public static void main( String[] args ) throws URISyntaxException
     {
-        System.out.println( "Hello World!" );
+        Path input = Paths.get(App.class.getClassLoader().getResource("livraison_retards_dataset.csv").toURI());
+        Path output = input.getParent().resolve("livraison_retards_preprocessed.csv");
+
+        HeureDepartPreprocessor.convertPreprocessor(input, output);
     }
 }
