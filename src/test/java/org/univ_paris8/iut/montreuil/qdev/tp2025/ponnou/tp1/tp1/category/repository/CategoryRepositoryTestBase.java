@@ -23,6 +23,9 @@ abstract class CategoryRepositoryTestBase {
 
     @BeforeEach
     void setUpBase() {
+        categoryRepository.deleteAll();
+        entityManager.flush();
+        entityManager.clear();
         existing = new Category("Immobilier");
         entityManager.persist(existing);
         entityManager.flush();
