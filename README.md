@@ -240,7 +240,7 @@ Comportement :
 - Upload artifacts (Java 17 uniquement) :
   - `master-annonce-jar` → `target/masterannonce.jar`
   - `jacoco-report` → `target/site/jacoco/`
-- Job Docker sur `main` uniquement :
+- Job Docker :
   - Build de l'image et push vers Docker Hub
 
 ### Choix base de données en CI — Testcontainers (Option 1)
