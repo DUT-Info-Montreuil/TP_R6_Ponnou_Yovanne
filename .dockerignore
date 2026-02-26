@@ -1,4 +1,5 @@
 target/
+!target/masterannonce.jar
 .git/
 .idea/
 *.iml
