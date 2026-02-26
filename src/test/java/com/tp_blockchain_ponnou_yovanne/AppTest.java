@@ -33,6 +33,17 @@ public class AppTest
      */
     public void testApp()
     {
-        assertTrue( true );
+        Blockchain blockchain = new Blockchain();
+        blockchain.addBlockWithProofOfWork(new TicketData("EVT-TEST", "Artist", "PURCHASED", "Alice"));
+        blockchain.addBlockWithProofOfStake(new TicketData("EVT-TEST", "Artist", "RESOLD", "Bob"));
+        blockchain.addBlockWithPbft(new TicketData("EVT-TEST", "Artist", "USED", "Bob"));
+        blockchain.addBlockWithProofOfAuthority(new TicketData("EVT-TEST", "Artist", "INVALID", "Bob"));
+
+        assertTrue(blockchain.isChainValid());
+        assertEquals(5, blockchain.getChain().size());
+        assertTrue(blockchain.getChain().get(1).hash.startsWith("0".repeat(blockchain.getPowDifficulty())));
+        assertEquals("POS", blockchain.getChain().get(2).consensus);
+        assertEquals("PBFT", blockchain.getChain().get(3).consensus);
+        assertEquals("POA", blockchain.getChain().get(4).consensus);
     }
 }
