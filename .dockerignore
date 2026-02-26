@@ -1,9 +1,0 @@
-target/
-!target/masterannonce.jar
-.git/
-.idea/
-*.iml
-.claude/
-node_modules/
-out/
-logs/
